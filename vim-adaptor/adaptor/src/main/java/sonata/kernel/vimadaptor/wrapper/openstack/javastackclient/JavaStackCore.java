@@ -74,8 +74,13 @@ public class JavaStackCore {
   private JavaStackCore() {}
 
   public enum Constants {
-    AUTH_PORT("5000"), HEAT_PORT("8004"), IMAGE_PORT("9292"), COMPUTE_PORT("8774"), HEAT_VERSION(
-        "v1"), IMAGE_VERSION("v2"), COMPUTE_VERSION(
+    // OpenStack default ports
+    //AUTH_PORT("5000"), HEAT_PORT("8004"), IMAGE_PORT("9292"), COMPUTE_PORT("8774"), HEAT_VERSION(
+    //    "v1"), IMAGE_VERSION("v2"), COMPUTE_VERSION(
+    //        "v2"), AUTHTOKEN_HEADER("X-AUTH-TOKEN"), AUTH_URI("/v2.0/tokens");
+    // SONATA emulator ports
+    AUTH_PORT("6003"), HEAT_PORT("9007"), IMAGE_PORT("10245"), COMPUTE_PORT("9777"), HEAT_VERSION(
+            "v1"), IMAGE_VERSION("v2"), COMPUTE_VERSION(
             "v2"), AUTHTOKEN_HEADER("X-AUTH-TOKEN"), AUTH_URI("/v2.0/tokens");
 
     private final String constantValue;
