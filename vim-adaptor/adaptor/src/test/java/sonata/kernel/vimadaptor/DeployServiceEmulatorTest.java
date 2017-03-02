@@ -85,7 +85,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     ServiceDescriptor sd;
     StringBuilder bodyBuilder = new StringBuilder();
     BufferedReader in = new BufferedReader(new InputStreamReader(
-        new FileInputStream(new File("./YAML/sonata-demo.yml")), Charset.forName("UTF-8")));
+        new FileInputStream(new File("./YAML/emulator-demo-nsd.yml")), Charset.forName("UTF-8")));
     String line;
     while ((line = in.readLine()) != null)
       bodyBuilder.append(line + "\n\r");
@@ -104,7 +104,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     VnfDescriptor vnfd1;
     bodyBuilder = new StringBuilder();
     in = new BufferedReader(new InputStreamReader(
-        new FileInputStream(new File("./YAML/vtc-vnf-vnfd.yml")), Charset.forName("UTF-8")));
+        new FileInputStream(new File("./YAML/emulator-demo-l4fw-socat-vnfd.yml")), Charset.forName("UTF-8")));
     line = null;
     while ((line = in.readLine()) != null)
       bodyBuilder.append(line + "\n\r");
@@ -113,16 +113,26 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     VnfDescriptor vnfd2;
     bodyBuilder = new StringBuilder();
     in = new BufferedReader(new InputStreamReader(
-        new FileInputStream(new File("./YAML/fw-vnf-vnfd.yml")), Charset.forName("UTF-8")));
+        new FileInputStream(new File("./YAML/emulator-demo-proxy-squid-vnfd.yml")), Charset.forName("UTF-8")));
     line = null;
     while ((line = in.readLine()) != null)
       bodyBuilder.append(line + "\n\r");
     vnfd2 = mapper.readValue(bodyBuilder.toString(), VnfDescriptor.class);
 
+    VnfDescriptor vnfd3;
+    bodyBuilder = new StringBuilder();
+    in = new BufferedReader(new InputStreamReader(
+            new FileInputStream(new File("./YAML/emulator-demo-http-apache-vnfd.yml")), Charset.forName("UTF-8")));
+    line = null;
+    while ((line = in.readLine()) != null)
+      bodyBuilder.append(line + "\n\r");
+    vnfd3 = mapper.readValue(bodyBuilder.toString(), VnfDescriptor.class);
+
     this.data = new ServiceDeployPayload();
     this.data.setServiceDescriptor(sd);
     this.data.addVnfDescriptor(vnfd1);
     this.data.addVnfDescriptor(vnfd2);
+    this.data.addVnfDescriptor(vnfd3);
   }
 
   /**
@@ -133,7 +143,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
    * @throws Exception
    */
   @Test
-  public void testDeployServiceOpenStackV1() throws Exception {
+  public void testDeployServiceEmulatorOpenStackApi() throws Exception {
 
     BlockingQueue<ServicePlatformMessage> muxQueue =
         new LinkedBlockingQueue<ServicePlatformMessage>();
@@ -217,6 +227,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     */
 
     // deploy service
+    /*
     output = null;
     String baseInstanceUuid = data.getNsd().getInstanceUuid();
     data.setVimUuid(computeWrUuid);
@@ -228,15 +239,14 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     ServicePlatformMessage deployServiceMessage = new ServicePlatformMessage(body,
         "application/x-yaml", topic, UUID.randomUUID().toString(), topic);
 
-    /*
     consumer.injectMessage(deployServiceMessage);
 
-    //Thread.sleep(2000);
-    //while (output == null)
-    //  synchronized (mon) {
-    //    mon.wait(1000);
-    //  }
-    //Assert.assertNotNull(output);
+    Thread.sleep(2000);
+    while (output == null)
+      synchronized (mon) {
+        mon.wait(1000);
+      }
+    Assert.assertNotNull(output);
     int retry = 0;
     int maxRetry = 10; // adapt according to used VIm
     while (output.contains("heartbeat") || output.contains("Vim Added") && retry < maxRetry)
@@ -252,7 +262,6 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     Assert.assertTrue(response.getRequestStatus().equals("DEPLOYED"));
     Assert.assertTrue(response.getNsr().getStatus() == Status.offline);
     */
-
     //for (VnfRecord vnfr : response.getVnfrs())
     //  Assert.assertTrue(vnfr.getStatus() == Status.offline);
 

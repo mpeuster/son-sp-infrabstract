@@ -79,7 +79,7 @@ public class JavaStackCore {
     //    "v1"), IMAGE_VERSION("v2"), COMPUTE_VERSION(
     //        "v2"), AUTHTOKEN_HEADER("X-AUTH-TOKEN"), AUTH_URI("/v2.0/tokens");
     // SONATA emulator ports
-    AUTH_PORT("6003"), HEAT_PORT("9007"), IMAGE_PORT("10245"), COMPUTE_PORT("9777"), HEAT_VERSION(
+    AUTH_PORT("6001"), HEAT_PORT("9005"), IMAGE_PORT("10243"), COMPUTE_PORT("9775"), HEAT_VERSION(
             "v1"), IMAGE_VERSION("v2"), COMPUTE_VERSION(
             "v2"), AUTHTOKEN_HEADER("X-AUTH-TOKEN"), AUTH_URI("/v2.0/tokens");
 

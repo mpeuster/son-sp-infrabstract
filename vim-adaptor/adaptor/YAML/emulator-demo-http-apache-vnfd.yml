@@ -1,0 +1,56 @@
+---
+descriptor_version: "vnfd-schema-01"
+vendor: "eu.sonata-nfv"
+name: "emulator-apache-vnf"
+version: "0.1"
+author: "Manuel Peuster, Paderborn University <manuel.peuster@upb.de>"
+description: "Apache HTTP server VNF"
+##
+## The virtual deployment unit.
+##
+virtual_deployment_units:
+  - id: "1"
+    vm_image: "sonata-apache"
+    vm_image_format: "docker"
+    resource_requirements:
+      cpu:
+        vcpus: 1
+      memory:
+        size: 1
+        size_unit: "GB"
+      storage:
+        size: 1
+        size_unit: "GB"
+    connection_points:
+      - id: "vdu01:eth0"
+        type: "public"
+      - id: "vdu01:eth1"
+        type: "internal"
+
+##
+## The virtual links that interconnect
+## the different connections points.
+##
+virtual_links:
+  - id: "mgmt"
+    connectivity_type: "E-LAN"
+    connection_points_reference:
+      - "vdu01:eth0"
+      - "mgmt"
+  - id: "input"
+    connectivity_type: "E-Line"
+    connection_points_reference:
+      - "vdu01:eth1"
+      - "vnf:input"
+
+##
+## The VNF connection points to the 
+## outside world.
+##
+connection_points:
+  - id: "vnf:mgmt"
+    type: "public"
+  - id: "vnf:input"
+    type: "internal"
+uuid: 6a15313f-cb0a-4540-baa2-77cc6b3f5672
+instance_uuid: 6a15313f-cb0a-4540-baa2-77cc6b3f0002
