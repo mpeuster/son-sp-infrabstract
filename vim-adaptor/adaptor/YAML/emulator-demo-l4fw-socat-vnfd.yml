@@ -10,7 +10,7 @@ description: "Socat L4 forwarder VNF"
 ##
 virtual_deployment_units:
   - id: "1"
-    vm_image: "sonata-socat-squid"
+    vm_image: "sonata-socat"
     vm_image_format: "docker"
     resource_requirements:
       cpu:

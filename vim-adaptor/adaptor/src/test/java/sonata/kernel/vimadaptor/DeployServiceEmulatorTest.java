@@ -227,7 +227,6 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     */
 
     // deploy service
-    /*
     output = null;
     String baseInstanceUuid = data.getNsd().getInstanceUuid();
     data.setVimUuid(computeWrUuid);
@@ -261,7 +260,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     ServiceDeployResponse response = mapper.readValue(output, ServiceDeployResponse.class);
     Assert.assertTrue(response.getRequestStatus().equals("DEPLOYED"));
     Assert.assertTrue(response.getNsr().getStatus() == Status.offline);
-    */
+
     //for (VnfRecord vnfr : response.getVnfrs())
     //  Assert.assertTrue(vnfr.getStatus() == Status.offline);
 
