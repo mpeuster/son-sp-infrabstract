@@ -117,8 +117,8 @@ public class WimRepo {
       rs = findTablesStmt.executeQuery();
       while (rs.next()) {
         String tablename = rs.getString("tablename");
-        if (tablename.equals("wim") || tablename.equals("WIM")
-            || tablename.equals("serviced_segments") || tablename.equals("SERVICED_SEGMENTS")) {
+        if (tablename.equals("wim") || tablename.equals("WIM") || tablename.equals("attached_vim")
+            || tablename.equals("attached_vim")) {
           isEnvironmentSet = true;
           break;
         }
@@ -128,11 +128,11 @@ public class WimRepo {
       }
       if (!isEnvironmentSet) {
         stmt = connection.createStatement();
-        sql = "CREATE TABLE wim " + "(UUID TEXT PRIMARY KEY NOT NULL," + " TYPE TEXT,"
+        sql = "CREATE TABLE wim " + "(UUID TEXT PRIMARY KEY NOT NULL," + " TYPE TEXT,"+" NAME TEXT,"
             + " VENDOR TEXT NOT NULL," + " ENDPOINT TEXT NOT NULL," + " USERNAME TEXT NOT NULL,"
             + " PASS TEXT," + " AUTHKEY TEXT);";
         stmt.executeUpdate(sql);
-        sql = "CREATE TABLE serviced_segments " + "(NETWORK_SEGMENT TEXT PRIMARY KEY NOT NULL,"
+        sql = "CREATE TABLE attached_vim " + "(VIM_UUID TEXT PRIMARY KEY NOT NULL,"
             + " WIM_UUID TEXT NOT NULL REFERENCES wim(UUID));";
         stmt.executeUpdate(sql);
 
@@ -192,30 +192,20 @@ public class WimRepo {
               prop.getProperty("user"), prop.getProperty("pass"));
       connection.setAutoCommit(false);
 
-      String sql = "INSERT INTO WIM (UUID, TYPE, VENDOR, ENDPOINT, USERNAME, PASS, AUTHKEY) "
-          + "VALUES (?, ?, ?, ?, ?, ?, ?);";
+      String sql = "INSERT INTO WIM (UUID, TYPE, VENDOR, ENDPOINT, USERNAME, PASS, AUTHKEY, NAME) "
+          + "VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
       stmt = connection.prepareStatement(sql);
       stmt.setString(1, uuid);
       stmt.setString(2, record.getConfig().getWrapperType());
-      stmt.setString(3, record.getConfig().getWimVendor());
+      stmt.setString(3, record.getConfig().getWimVendor().toString());
       stmt.setString(4, record.getConfig().getWimEndpoint().toString());
       stmt.setString(5, record.getConfig().getAuthUserName());
       stmt.setString(6, record.getConfig().getAuthPass());
       stmt.setString(7, record.getConfig().getAuthKey());
+      stmt.setString(8, record.getConfig().getName());
       stmt.executeUpdate();
       connection.commit();
       stmt.close();
-      if (record.getConfig().getServicedSegments() != null) {
-        sql = "INSERT INTO SERVICED_SEGMENTS (NETWORK_SEGMENT, WIM_UUID) " + "VALUES (?, ?);";
-        stmt = connection.prepareStatement(sql);
-        for (String segment : record.getConfig().getServicedSegments()) {
-          stmt.setString(1, segment);
-          stmt.setString(2, uuid);
-          stmt.executeUpdate();
-
-        }
-        connection.commit();
-      }
     } catch (SQLException e) {
       Logger.error(e.getMessage(), e);
       out = false;
@@ -259,14 +249,7 @@ public class WimRepo {
                   + prop.getProperty("repo_port") + "/" + "wimregistry",
               prop.getProperty("user"), prop.getProperty("pass"));
       connection.setAutoCommit(false);
-      String sql = "DELETE from SERVICED_SEGMENTS where WIM_UUID=?;";
-      stmt = connection.prepareStatement(sql);
-      stmt.setString(1, uuid);
-      stmt.executeUpdate();
-      connection.commit();
-      stmt.close();
-
-      sql = "DELETE from WIM where UUID=?;";
+      String sql = "DELETE from WIM where UUID=?;";
       stmt = connection.prepareStatement(sql);
       stmt.setString(1, uuid);
       stmt.executeUpdate();
@@ -319,17 +302,18 @@ public class WimRepo {
       connection.setAutoCommit(false);
 
 
-      String sql = "UPDATE WIM set (TYPE, VENDOR, ENDPOINT, USERNAME, PASS, AUTHKEY) "
-          + "VALUES (?,?,?,?,?,?) WHERE UUID=?;";
+      String sql = "UPDATE WIM set (TYPE, VENDOR, ENDPOINT, USERNAME, PASS, AUTHKEY, NAME) "
+          + "VALUES (?,?,?,?,?,?,?) WHERE UUID=?;";
 
       stmt = connection.prepareStatement(sql);
       stmt.setString(1, record.getConfig().getWrapperType());
-      stmt.setString(2, record.getConfig().getWimVendor());
+      stmt.setString(2, record.getConfig().getWimVendor().toString());
       stmt.setString(3, record.getConfig().getWimEndpoint().toString());
       stmt.setString(4, record.getConfig().getAuthUserName());
       stmt.setString(5, record.getConfig().getAuthPass());
       stmt.setString(6, record.getConfig().getAuthKey());
-      stmt.setString(7, uuid);
+      stmt.setString(7, record.getConfig().getName());
+      stmt.setString(8, uuid);
 
 
       stmt.executeUpdate(sql);
@@ -394,15 +378,17 @@ public class WimRepo {
         String user = rs.getString("USERNAME");
         String pass = rs.getString("PASS");
         String key = rs.getString("AUTHKEY");
+        String name = rs.getString("NAME");
 
         WrapperConfiguration config = new WrapperConfiguration();
         config.setUuid(uuid);
         config.setWrapperType(wrapperType);
-        config.setWimVendor(vendor);
+        config.setWimVendor(WimVendor.getByName(vendor));
         config.setWimEndpoint(urlString);
         config.setAuthUserName(user);
         config.setAuthPass(pass);
         config.setAuthKey(key);
+        config.setName(name);
 
         Wrapper wrapper = WrapperFactory.createWrapper(config);
         output = new WrapperRecord(wrapper, config);
@@ -447,7 +433,7 @@ public class WimRepo {
    * @return the WrapperRecord representing the wrapper, null if the wrapper is not registered in
    *         the repository
    */
-  public WrapperRecord readWimEntryFromNetSegment(String netSegment) {
+  public WrapperRecord readWimEntryFromVimUuid(String vimUuid) {
 
     WrapperRecord output = null;
 
@@ -464,8 +450,8 @@ public class WimRepo {
       connection.setAutoCommit(false);
 
       stmt = connection.prepareStatement(
-          "SELECT * FROM wim,serviced_segments WHERE wim.uuid = serviced_segments.wim_uuid AND network_segment=?;");
-      stmt.setString(1, netSegment);
+          "SELECT * FROM wim,attached_vim WHERE wim.uuid = attached_vim.wim_uuid AND attached_vim.vim_uuid=?;");
+      stmt.setString(1, vimUuid);
       rs = stmt.executeQuery();
 
       if (rs.next()) {
@@ -476,15 +462,17 @@ public class WimRepo {
         String user = rs.getString("USERNAME");
         String pass = rs.getString("PASS");
         String key = rs.getString("AUTHKEY");
+        String name = rs.getString("NAME");
 
         WrapperConfiguration config = new WrapperConfiguration();
         config.setUuid(uuid);
         config.setWrapperType(wrapperType);
-        config.setWimVendor(vendor);
+        config.setWimVendor(WimVendor.getByName(vendor));
         config.setWimEndpoint(urlString);
         config.setAuthUserName(user);
         config.setAuthPass(pass);
         config.setAuthKey(key);
+        config.setName(name);
 
         Wrapper wrapper = WrapperFactory.createWrapper(config);
         output = new WrapperRecord(wrapper, config);
@@ -599,6 +587,105 @@ public class WimRepo {
     }
 
     return prop;
+  }
+
+  public boolean attachVim(String wimUuid, String vimUuid) {
+    boolean out = true;
+
+    Connection connection = null;
+    PreparedStatement stmt = null;
+    try {
+      Class.forName("org.postgresql.Driver");
+      connection =
+          DriverManager.getConnection(
+              "jdbc:postgresql://" + prop.getProperty("repo_host") + ":"
+                  + prop.getProperty("repo_port") + "/" + "wimregistry",
+              prop.getProperty("user"), prop.getProperty("pass"));
+      connection.setAutoCommit(false);
+
+      String sql = "INSERT INTO attached_vim (VIM_UUID, WIM_UUID) "
+          + "VALUES (?, ?);";
+      stmt = connection.prepareStatement(sql);
+      stmt.setString(1, vimUuid);
+      stmt.setString(2, wimUuid);
+      stmt.executeUpdate();
+      connection.commit();
+      stmt.close();
+    } catch (SQLException e) {
+      Logger.error(e.getMessage(), e);
+      out = false;
+    } catch (ClassNotFoundException e) {
+      Logger.error(e.getMessage(), e);
+      out = false;
+    } finally {
+      try {
+        if (stmt != null) {
+          stmt.close();
+        }
+        if (connection != null) {
+          connection.close();
+        }
+      } catch (SQLException e) {
+        Logger.error(e.getMessage(), e);
+        out = false;
+      }
+    }
+    Logger.info("Records created successfully");
+
+    return out;
+  }
+
+  public ArrayList<String> readAttachedVim(String wimUuid) {
+    ArrayList<String> output = new ArrayList<String>();
+    Connection connection = null;
+    PreparedStatement stmt = null;
+    ResultSet rs = null;
+    try {
+      Class.forName("org.postgresql.Driver");
+      connection =
+          DriverManager.getConnection(
+              "jdbc:postgresql://" + prop.getProperty("repo_host") + ":"
+                  + prop.getProperty("repo_port") + "/" + "wimregistry",
+              prop.getProperty("user"), prop.getProperty("pass"));
+      connection.setAutoCommit(false);
+
+      stmt = connection.prepareStatement(
+          "SELECT * FROM attached_vim WHERE wim_uuid = ?;");
+      stmt.setString(1, wimUuid);
+      rs = stmt.executeQuery();
+
+      while (rs.next()) {
+        String vimUuid = rs.getString("VIM_UUID");
+        output.add(vimUuid);
+
+      }
+      
+    } catch (SQLException e) {
+      Logger.error(e.getMessage(), e);
+      output = null;
+    } catch (ClassNotFoundException e) {
+      Logger.error(e.getMessage(), e);
+      output = null;
+    } finally {
+      try {
+        if (stmt != null) {
+          stmt.close();
+        }
+        if (rs != null) {
+          rs.close();
+        }
+        if (connection != null) {
+          connection.close();
+        }
+      } catch (SQLException e) {
+        Logger.error(e.getMessage(), e);
+        output = null;
+
+      }
+    }
+    Logger.info("Operation done successfully");
+    return output;
+
   }
 
 }

@@ -29,16 +29,23 @@ package sonata.kernel.WimAdaptor;
 import java.util.ArrayList;
 import java.util.Observable;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
+import sonata.kernel.WimAdaptor.commons.SonataManifestMapper;
+import sonata.kernel.WimAdaptor.commons.WimRecord;
 import sonata.kernel.WimAdaptor.messaging.ServicePlatformMessage;
+import sonata.kernel.WimAdaptor.wrapper.WrapperBay;
+import sonata.kernel.WimAdaptor.wrapper.WrapperRecord;
 
 public class ListWimCallProcessor extends AbstractCallProcessor {
 
+  private static final org.slf4j.Logger Logger =
+      LoggerFactory.getLogger(ListWimCallProcessor.class);
+
+  
   public ListWimCallProcessor(ServicePlatformMessage message, String sid, WimAdaptorMux mux) {
     super(message, sid, mux);
   }
@@ -53,12 +60,28 @@ public class ListWimCallProcessor extends AbstractCallProcessor {
 
     // TODO
     // ArrayList<String> vimList = WrapperBay.getInstance().getComputeWrapperList();
-    ArrayList<String> wimList = null;
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    mapper.disable(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS);
-    mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
-    mapper.disable(SerializationFeature.WRITE_NULL_MAP_VALUES);
-    mapper.setSerializationInclusion(Include.NON_NULL);
+    ArrayList<WimRecord> wimList = new ArrayList<WimRecord>();
+    ArrayList<String> wimsUuid = WrapperBay.getInstance().getWimList();
+
+    System.out.println(wimsUuid);
+
+    for(String wim : wimsUuid){
+      WrapperRecord wr = WrapperBay.getInstance().getWimRecordFromWimUuid(wim);
+     
+      if(wr==null){
+        this.sendToMux(new ServicePlatformMessage("{\"request_status\":\"ERROR\"}", "application/json", message.getReplyTo(), message.getSid(), null));
+        return false;
+      }
+      WimRecord out = new WimRecord();
+      //Logger.debug(wr.toString());
+      out.setUuid(wr.getConfig().getUuid());
+      out.setName(wr.getConfig().getName());
+      ArrayList<String> attachedVims = WrapperBay.getInstance().getAttachedVims(wim);
+      out.setAttachedVims(attachedVims);
+      wimList.add(out);
+    }
+
+    ObjectMapper mapper = SonataManifestMapper.getSonataMapper();
     String body;
     try {
       body = mapper.writeValueAsString(wimList);

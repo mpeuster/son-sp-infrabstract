@@ -34,13 +34,18 @@ import java.io.IOException;
 
 public abstract class ComputeWrapper extends AbstractWrapper implements Wrapper {
 
+
+  public ComputeWrapper(){
+    this.setType(WrapperType.COMPUTE);
+  }
+  
   /**
    * general constructor for wrappers of type compute.
    */
-  public ComputeWrapper() {
+  public ComputeWrapper(WrapperConfiguration config) {
 
     this.setType(WrapperType.COMPUTE);
-
+    this.setConfig(config);
   }
 
   /**
@@ -101,7 +106,7 @@ public abstract class ComputeWrapper extends AbstractWrapper implements Wrapper 
    * 
    * @param image the object representing the VNF image
    */
-  public abstract boolean isImageStored(VnfImage image);
+  public abstract boolean isImageStored(VnfImage image, String callSid);
 
   /**
    * Remove the given image from this compute VIM image repository.

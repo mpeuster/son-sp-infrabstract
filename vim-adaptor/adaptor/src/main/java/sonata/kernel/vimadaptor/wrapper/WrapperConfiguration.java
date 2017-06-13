@@ -29,15 +29,16 @@ package sonata.kernel.vimadaptor.wrapper;
 public class WrapperConfiguration {
 
   private String vimEndpoint;
+  private String name;
   private VimVendor vimVendor;
   private WrapperType wrapperType;
   private String authUserName;
-  private String tenantName;
   private String authPass;
   private String authKey;
   private String uuid;
-  private String tenantExtNet;
-  private String tenantExtRouter;
+  private String city;
+  private String country;
+  private String configuration;
 
 
   public WrapperType getWrapperType() {
@@ -105,35 +106,44 @@ public class WrapperConfiguration {
     out += "VimEndpount: " + vimEndpoint + "\n";
     out += "User: " + authUserName + "\n";
     out += "pass: " + authPass + "\n";
-    if (wrapperType.equals(WrapperType.COMPUTE)) {
-      out += "tenant_ext_net: " + tenantExtNet + "\n";
-      out += "tenant_ext_router: " + tenantExtRouter + "\n";
-    }
+    out += "name: " + name + "\n";
+    out += "config:\n";
+    out += configuration;
     return out;
   }
 
-  public String getTenantName() {
-    return tenantName;
+
+
+  public String getCity() {
+    return city;
   }
 
-  public void setTenantName(String tenantName) {
-    this.tenantName = tenantName;
+  public String getCountry() {
+    return country;
   }
 
-  public String getTenantExtNet() {
-    return tenantExtNet;
+  public void setCity(String city) {
+    this.city = city;
   }
 
-  public void setTenantExtNet(String tenantExtNet) {
-    this.tenantExtNet = tenantExtNet;
+  public void setCountry(String country) {
+    this.country = country;
   }
 
-  public String getTenantExtRouter() {
-    return tenantExtRouter;
+  public String getConfiguration() {
+    return configuration;
   }
 
-  public void setTenantExtRouter(String tenantExtRouter) {
-    this.tenantExtRouter = tenantExtRouter;
+  public void setConfiguration(String configuration) {
+    this.configuration = configuration;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
   }
 
 }

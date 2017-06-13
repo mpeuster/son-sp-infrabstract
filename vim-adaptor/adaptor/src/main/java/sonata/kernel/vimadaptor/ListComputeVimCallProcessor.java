@@ -34,6 +34,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import org.slf4j.LoggerFactory;
 
+import sonata.kernel.vimadaptor.commons.SonataManifestMapper;
 import sonata.kernel.vimadaptor.commons.VimResources;
 import sonata.kernel.vimadaptor.messaging.ServicePlatformMessage;
 import sonata.kernel.vimadaptor.wrapper.ComputeWrapper;
@@ -43,12 +44,12 @@ import sonata.kernel.vimadaptor.wrapper.WrapperBay;
 import java.util.ArrayList;
 import java.util.Observable;
 
-public class ListVimCallProcessor extends AbstractCallProcessor {
+public class ListComputeVimCallProcessor extends AbstractCallProcessor {
 
   private static final org.slf4j.Logger Logger =
-      LoggerFactory.getLogger(ListVimCallProcessor.class);
+      LoggerFactory.getLogger(ListComputeVimCallProcessor.class);
 
-  public ListVimCallProcessor(ServicePlatformMessage message, String sid, AdaptorMux mux) {
+  public ListComputeVimCallProcessor(ServicePlatformMessage message, String sid, AdaptorMux mux) {
     super(message, sid, mux);
   }
 
@@ -72,7 +73,7 @@ public class ListVimCallProcessor extends AbstractCallProcessor {
         this.sendToMux(new ServicePlatformMessage(
             "{\"request_status\":\"fail\",\"message\":\"VIM not found\"}", "application/json",
             message.getReplyTo(), message.getSid(), null));
-       return false;
+        return false;
       }
       ResourceUtilisation resource = wr.getResourceUtilisation();
 
@@ -81,19 +82,32 @@ public class ListVimCallProcessor extends AbstractCallProcessor {
         VimResources bodyElement = new VimResources();
 
         bodyElement.setVimUuid(vimUuid);
+        bodyElement.setVimCity(wr.getConfig().getCity());
+        bodyElement.setVimName(wr.getConfig().getName());
+        bodyElement.setVimEndpoint(wr.getConfig().getVimEndpoint());
         bodyElement.setCoreTotal(resource.getTotCores());
         bodyElement.setCoreUsed(resource.getUsedCores());
         bodyElement.setMemoryTotal(resource.getTotMemory());
         bodyElement.setMemoryUsed(resource.getUsedMemory());
         resList.add(bodyElement);
+      } else {
+        VimResources bodyElement = new VimResources();
+
+        bodyElement.setVimUuid(vimUuid);
+        bodyElement.setVimCity(wr.getConfig().getCity());
+        bodyElement.setVimName(wr.getConfig().getName());
+        bodyElement.setVimEndpoint(wr.getConfig().getVimEndpoint());
+        bodyElement.setCoreTotal(-1);
+        bodyElement.setCoreUsed(-1);
+        bodyElement.setMemoryTotal(-1);
+        bodyElement.setMemoryUsed(-1);
+        resList.add(bodyElement);
+
       }
     }
 
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    mapper.disable(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS);
-    mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
-    mapper.disable(SerializationFeature.WRITE_NULL_MAP_VALUES);
-    mapper.setSerializationInclusion(Include.NON_NULL);
+    ObjectMapper mapper = SonataManifestMapper.getSonataMapper();
+    
     String body;
     try {
       Logger.info("Sending back response...");
@@ -107,9 +121,9 @@ public class ListVimCallProcessor extends AbstractCallProcessor {
       Logger.info("List VIM call completed.");
       return true;
     } catch (JsonProcessingException e) {
-      ServicePlatformMessage response =
-          new ServicePlatformMessage("{\"status\":\"ERROR\",\"message\":\"Internal Server Error\"}",
-              "application/json", this.getMessage().getReplyTo(), this.getSid(), null);
+      ServicePlatformMessage response = new ServicePlatformMessage(
+          "{\"request_status\":\"ERROR\",\"message\":\"Internal Server Error\"}",
+          "application/json", this.getMessage().getReplyTo(), this.getSid(), null);
       this.getMux().enqueue(response);
       return false;
     }

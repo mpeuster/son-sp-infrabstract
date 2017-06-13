@@ -66,7 +66,7 @@ public class ComputeMockWrapper extends ComputeWrapper implements Runnable {
   private static final long THREAD_SLEEP = 1000;
 
   public ComputeMockWrapper(WrapperConfiguration config) {
-    super();
+    super(config);
   }
 
   @Override
@@ -200,7 +200,7 @@ public class ComputeMockWrapper extends ComputeWrapper implements Runnable {
    * @see sonata.kernel.vimadaptor.wrapper.ComputeWrapper#isImageStored(java.lang.String)
    */
   @Override
-  public boolean isImageStored(VnfImage image) {
+  public boolean isImageStored(VnfImage image, String callSid) {
     boolean out = true;
     return out;
   }

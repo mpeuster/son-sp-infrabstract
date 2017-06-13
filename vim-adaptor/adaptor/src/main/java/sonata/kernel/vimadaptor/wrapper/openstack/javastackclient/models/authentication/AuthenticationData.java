@@ -28,7 +28,6 @@ package sonata.kernel.vimadaptor.wrapper.openstack.javastackclient.models.authen
 
 public class AuthenticationData {
 
-
   private Access access;
 
   public Access getAccess() {

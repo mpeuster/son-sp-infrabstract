@@ -26,15 +26,14 @@
 
 package sonata.kernel.WimAdaptor;
 
-import java.util.ArrayList;
 import java.util.Observable;
 import java.util.UUID;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import sonata.kernel.WimAdaptor.messaging.ServicePlatformMessage;
+import sonata.kernel.WimAdaptor.wrapper.WimVendor;
 import sonata.kernel.WimAdaptor.wrapper.WrapperBay;
 import sonata.kernel.WimAdaptor.wrapper.WrapperConfiguration;
 
@@ -63,26 +62,22 @@ public class AddWimCallProcessor extends AbstractCallProcessor {
     WrapperConfiguration config = new WrapperConfiguration();
 
     JSONObject jsonObject = (JSONObject) tokener.nextValue();
-    String wrapperType = jsonObject.getString("wr_type");
-    String vimType = jsonObject.getString("wim_type");
+    //String wrapperType = jsonObject.getString("WIM");
+    String wimVendor = jsonObject.getString("wim_vendor");
     String vimEndpoint = jsonObject.getString("wim_address");
     String authUser = jsonObject.getString("username");
+    String name = jsonObject.getString("name");
     String authPass = jsonObject.getString("pass");
-    JSONArray jsonServicedSegments = jsonObject.getJSONArray("serviced_segments");
-    ArrayList<String> servicedSegments = new ArrayList<String>();
-
-    for (int i = 0; i < jsonServicedSegments.length(); i++) {
-      servicedSegments.add(jsonServicedSegments.getString(i));
-    }
-
+    // JSONArray jsonServicedSegments = jsonObject.getJSONArray("serviced_segments");
+    // ArrayList<String> servicedSegments = new ArrayList<String>();
 
     config.setUuid(UUID.randomUUID().toString());
-    config.setWrapperType(wrapperType);
-    config.setWimVendor(vimType);
+    config.setWrapperType("WIM");
+    config.setWimVendor(WimVendor.getByName(wimVendor));
     config.setWimEndpoint(vimEndpoint);
     config.setAuthUserName(authUser);
     config.setAuthPass(authPass);
-    config.setServicedSegments(servicedSegments);
+    config.setName(name);
     String output = null;
     boolean out = true;
 

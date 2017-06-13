@@ -26,6 +26,7 @@ ADD son-sp-infra /etc/init.d/
 ADD ./setenv.sh /
 ADD ./test.sh /
 ADD ./docker-entrypoint.sh /
+#ADD test_images /test_images
 RUN chmod +x /setenv.sh
 RUN chmod +x /test.sh
 RUN chmod +x /usr/local/bin/son-sp-infra-*
@@ -43,7 +44,7 @@ ENV repo_port 5432
 ENV repo_user sonatatest
 ENV repo_pass sonata
 
-RUN mvn -e -q compile assembly:single;
+RUN mvn -e -q  compile assembly:single;
 #RUN mvn -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true clean compile assembly:single;
 
 CMD ["/docker-entrypoint.sh","/test.sh"]

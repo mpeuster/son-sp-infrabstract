@@ -66,16 +66,13 @@ public class OvsWrapper extends NetworkWrapper {
 
   private static final String ADAPTOR_SEGMENTS_CONF = "/adaptor/segments.conf";
 
-  private WrapperConfiguration config;
-
   /**
    * Basic constructor.
    * 
    * @param config the configuration object of this wrapper.
    */
   public OvsWrapper(WrapperConfiguration config) {
-    super();
-    this.config = config;
+    super(config);
   }
 
   @Override
@@ -88,7 +85,7 @@ public class OvsWrapper extends NetworkWrapper {
     // This is not implemented in the first version.
 
 
-
+    String serviceInstanceId = data.getServiceInstanceId();
     ServiceDescriptor nsd = data.getNsd();
     ArrayList<VnfRecord> vnfrs = data.getVnfrs();
     ArrayList<VnfDescriptor> vnfds = data.getVnfds();
@@ -179,12 +176,12 @@ public class OvsWrapper extends NetworkWrapper {
               "Illegal Format: Unable to find the VNFC Cp name connected to this in/out VNF VL");
         }
 
-        // Logger.debug("Searching for CpRecord of Cp: " + vnfcCpName);
+        Logger.debug("Searching for CpRecord of Cp: " + vnfcCpName);
         ConnectionPointRecord matchingCpRec = null;
         for (VduRecord vdu : vnfr.getVirtualDeploymentUnits()) {
           for (VnfcInstance vnfc : vdu.getVnfcInstance()) {
             for (ConnectionPointRecord cpRec : vnfc.getConnectionPoints()) {
-              // Logger.debug("Checking " + cpRec.getId());
+              Logger.debug("Checking " + cpRec.getId());
               if (vnfcCpName.equals(cpRec.getId())) {
                 matchingCpRec = cpRec;
                 break;
@@ -194,7 +191,7 @@ public class OvsWrapper extends NetworkWrapper {
 
         }
 
-        String qualifiedName = vnfName + ":" + vnfcCpName + ":" + nsd.getInstanceUuid();
+        String qualifiedName = vnfName + "." + vnfcCpName + "." + nsd.getInstanceUuid();
         // HeatPort connectedPort = null;
         // for (HeatPort port : composition.getPorts()) {
         // if (port.getPortName().equals(qualifiedName)) {
@@ -204,11 +201,11 @@ public class OvsWrapper extends NetworkWrapper {
         // }
         if (matchingCpRec == null) {
           throw new Exception(
-              "Illegal Format: cannot find the VNFR:VDU:VNFC:CPR matching: " + vnfcCpName);
+              "Illegal Format: cannot find the VNFR.VDU.VNFC.CPR matching: " + vnfcCpName);
         } else {
           // Eureka!
           OrderedMacAddress mac = new OrderedMacAddress();
-          mac.setMac(matchingCpRec.getType().getHardwareAddress());
+          mac.setMac(matchingCpRec.getInterface().getHardwareAddress());
           mac.setPosition(portIndex);
           mac.setReferenceCp(qualifiedName);
           portIndex++;
@@ -220,18 +217,18 @@ public class OvsWrapper extends NetworkWrapper {
     segments.load(new FileReader(new File(ADAPTOR_SEGMENTS_CONF)));
 
     Collections.sort(odlList);
-    OvsPayload odlPayload = new OvsPayload("add", data.getServiceInstanceId(),
-        segments.getProperty("in"), segments.getProperty("out"), odlList);
+    OvsPayload odlPayload = new OvsPayload("add", serviceInstanceId, segments.getProperty("in"),
+        segments.getProperty("out"), odlList);
     ObjectMapper mapper = new ObjectMapper(new JsonFactory());
     mapper.setSerializationInclusion(Include.NON_NULL);
     // Logger.info(compositionString);
     String payload = mapper.writeValueAsString(odlPayload);
-    Logger.debug(this.config.getUuid()+" - "+this.config.getVimEndpoint());
+    Logger.debug(this.getConfig().getUuid() + " - " + this.getConfig().getVimEndpoint());
     Logger.debug(payload);
 
     int sfcAgentPort = 55555;
     DatagramSocket clientSocket = new DatagramSocket(sfcAgentPort);
-    InetAddress IPAddress = InetAddress.getByName(config.getVimEndpoint());
+    InetAddress IPAddress = InetAddress.getByName(this.getConfig().getVimEndpoint());
     byte[] sendData = new byte[1024];
     byte[] receiveData = new byte[1024];
     sendData = payload.getBytes(Charset.forName("UTF-8"));
@@ -240,13 +237,12 @@ public class OvsWrapper extends NetworkWrapper {
     clientSocket.send(sendPacket);
     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
     clientSocket.setSoTimeout(10000);
-    try{
+    try {
       clientSocket.receive(receivePacket);
-    }catch(SocketTimeoutException e){
+    } catch (SocketTimeoutException e) {
       clientSocket.close();
       Logger.error("Timeout exception from the OVS SFC agent");
-      throw new Exception(
-          "Request to OVS VIM agent timed out.");
+      throw new Exception("Request to OVS VIM agent timed out.");
     }
     clientSocket.close();
     String response =
@@ -262,6 +258,7 @@ public class OvsWrapper extends NetworkWrapper {
     return;
   }
 
+  @Override
   public void deconfigureNetworking(String instanceId) throws Exception {
 
     OvsPayload odlPayload = new OvsPayload("delete", instanceId, null, null, null);
@@ -272,8 +269,8 @@ public class OvsWrapper extends NetworkWrapper {
     Logger.info(payload);
 
     int sfcAgentPort = 55555;
-   
-    InetAddress IPAddress = InetAddress.getByName(config.getVimEndpoint());
+
+    InetAddress IPAddress = InetAddress.getByName(this.getConfig().getVimEndpoint());
     byte[] sendData = new byte[1024];
     byte[] receiveData = new byte[1024];
     sendData = payload.getBytes(Charset.forName("UTF-8"));
@@ -283,13 +280,12 @@ public class OvsWrapper extends NetworkWrapper {
     clientSocket.send(sendPacket);
     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
     clientSocket.setSoTimeout(10000);
-    try{
+    try {
       clientSocket.receive(receivePacket);
-    }catch(SocketTimeoutException e){
+    } catch (SocketTimeoutException e) {
       clientSocket.close();
       Logger.error("Timeout exception from the OVS SFC agent");
-      throw new Exception(
-          "Request to OVS VIM agent timed out.");
+      throw new Exception("Request to OVS VIM agent timed out.");
     }
     clientSocket.close();
     String response =

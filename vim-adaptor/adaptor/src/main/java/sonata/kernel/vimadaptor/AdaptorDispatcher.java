@@ -81,8 +81,6 @@ public class AdaptorDispatcher implements Runnable {
           handleFunctionMessage(message);
         } else if (isMonitoringMessage(message)) {
           this.handleMonitoringMessage(message);
-        } else if (isNetworkMsg(message)) {
-          this.handleNetworkMessage(message);
         }
       } catch (InterruptedException e) {
         Logger.error(e.getMessage(), e);
@@ -90,12 +88,6 @@ public class AdaptorDispatcher implements Runnable {
     } while (!stop);
   }
 
-  private void handleNetworkMessage(ServicePlatformMessage message) {
-    if (message.getTopic().endsWith("configure")) {
-      Logger.info("Received a \"Network\" API call on topic: " + message.getTopic());
-      myThreadPool.execute(new ConfigureNetworkCallProcessor(message, message.getSid(), mux));
-    }
-  }
 
   private void handleMonitoringMessage(ServicePlatformMessage message) {
     if (message.getTopic().contains("compute")) {
@@ -116,6 +108,12 @@ public class AdaptorDispatcher implements Runnable {
     } else if (message.getTopic().endsWith("prepare")) {
       Logger.info("Received a \"service.prepare\" API call on topic: " + message.getTopic());
       myThreadPool.execute(new PrepareServiceCallProcessor(message, message.getSid(), mux));
+    } else if (message.getTopic().endsWith("chain.deconfigure")) {
+      Logger.info("Received a \"Network\" API call on topic: " + message.getTopic());
+      myThreadPool.execute(new DeconfigureNetworkCallProcessor(message, message.getSid(), mux));
+    } else if (message.getTopic().endsWith("chain.configure")) {
+      Logger.info("Received a \"Network\" API call on topic: " + message.getTopic());
+      myThreadPool.execute(new ConfigureNetworkCallProcessor(message, message.getSid(), mux));
     }
   }
 
@@ -136,7 +134,7 @@ public class AdaptorDispatcher implements Runnable {
         myThreadPool.execute(new ResourceAvailabilityCallProcessor(message, message.getSid(), mux));
       } else if (message.getTopic().endsWith("list")) {
         Logger.info("Received a \"List VIMs\" API call on topic: " + message.getTopic());
-        myThreadPool.execute(new ListVimCallProcessor(message, message.getSid(), mux));
+        myThreadPool.execute(new ListComputeVimCallProcessor(message, message.getSid(), mux));
       }
     } else if (message.getTopic().contains("storage")) {
       // TODO Storage Management API
@@ -145,6 +143,9 @@ public class AdaptorDispatcher implements Runnable {
         myThreadPool.execute(new AddVimCallProcessor(message, message.getSid(), mux));
       } else if (message.getTopic().endsWith("remove")) {
         myThreadPool.execute(new RemoveVimCallProcessor(message, message.getSid(), mux));
+      } else if (message.getTopic().endsWith("list")) {
+        Logger.info("Received a \"List VIMs\" API call on topic: " + message.getTopic());
+        myThreadPool.execute(new ListNetworkVimCallProcessor(message, message.getSid(), mux));
       } else {
         Logger.info("Received an unknown menagement API call on topic: " + message.getTopic());
       }
@@ -158,10 +159,6 @@ public class AdaptorDispatcher implements Runnable {
 
   private boolean isServiceMsg(ServicePlatformMessage message) {
     return message.getTopic().contains("infrastructure.service");
-  }
-
-  private boolean isNetworkMsg(ServicePlatformMessage message) {
-    return message.getTopic().contains("infrastructure.network");
   }
 
   private boolean isMonitoringMessage(ServicePlatformMessage message) {

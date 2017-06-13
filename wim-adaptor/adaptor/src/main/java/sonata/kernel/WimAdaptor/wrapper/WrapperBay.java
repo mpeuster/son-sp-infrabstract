@@ -26,6 +26,7 @@
 
 package sonata.kernel.WimAdaptor.wrapper;
 
+import java.util.ArrayList;
 
 public class WrapperBay {
 
@@ -68,25 +69,48 @@ public class WrapperBay {
     Wrapper newWrapper = WrapperFactory.createWrapper(config);
     String output = "";
     if (newWrapper == null) {
-      output = "{\"status\":\"ERROR\",\"message:\"Cannot Attach To Wim\"}";
+      output = "{\"request_status\":\"ERROR\",\"message:\"Cannot Attach To Wim\",\"uuid\":\"\"}";
     } else {
       WrapperRecord record = new WrapperRecord(newWrapper, config);
       this.repository.writeWimEntry(config.getUuid(), record);
-      output = "{\"status\":\"COMPLETED\",\"uuid\":\"" + config.getUuid() + "\"}";
+      output = "{\"request_status\":\"COMPLETED\",\"uuid\":\"" + config.getUuid()
+          + "\",\"message\":\"\"}";
     }
 
     return output;
   }
 
-  public WrapperRecord getWimRecord(String vimUuid) {
+  public WrapperRecord getWimRecordFromAttachedVim(String vimUuid) {
     WrapperRecord out;
-    out = this.repository.readWimEntryFromNetSegment(vimUuid);
+    out = this.repository.readWimEntryFromVimUuid(vimUuid);
     return out;
   }
 
+  public WrapperRecord getWimRecordFromWimUuid(String wimUuid) {
+    WrapperRecord out;
+    out = this.repository.readWimEntry(wimUuid);
+    return out;
+  }
+  
   public String removeWimWrapper(String uuid) {
     repository.removeWimEntry(uuid);
-    return "{\"status\":\"COMPLETED\"}";
+    return "{\"request_status\":\"COMPLETED\"}";
+  }
+
+  public ArrayList<String> getWimList() {
+    return repository.listWims();
+  }
+
+  public String attachVim(String wimUuid, String vimUuid) {
+    boolean result = repository.attachVim(wimUuid, vimUuid);
+    if(result)
+      return "{\"request_status\":\"COMPLETED\"}";
+    else
+      return "{\"request_status\":\"ERROR\",\"message\":\"Unable to write VIM attachment into WIM repository\"}";  
+  }
+
+  public ArrayList<String> getAttachedVims(String wimUuid) {
+    return repository.readAttachedVim(wimUuid);
   }
 
 }

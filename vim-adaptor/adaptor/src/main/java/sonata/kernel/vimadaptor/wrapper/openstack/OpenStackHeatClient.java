@@ -43,6 +43,7 @@ import sonata.kernel.vimadaptor.commons.heat.StackComposition;
 import sonata.kernel.vimadaptor.wrapper.openstack.javastackclient.JavaStackCore;
 import sonata.kernel.vimadaptor.wrapper.openstack.javastackclient.JavaStackUtils;
 import sonata.kernel.vimadaptor.wrapper.openstack.javastackclient.models.composition.FloatingIpAttributes;
+import sonata.kernel.vimadaptor.wrapper.openstack.javastackclient.models.composition.Link;
 import sonata.kernel.vimadaptor.wrapper.openstack.javastackclient.models.composition.PortAttributes;
 import sonata.kernel.vimadaptor.wrapper.openstack.javastackclient.models.composition.Resource;
 import sonata.kernel.vimadaptor.wrapper.openstack.javastackclient.models.composition.ResourceData;
@@ -77,28 +78,28 @@ public class OpenStackHeatClient {
    * @param userName to log into the OpenStack service
    * @param password to log into the OpenStack service
    * @param tenantName to log into the OpenStack service
+   * @throws IOException if the client cannoct connect to the VIM
    */
-  public OpenStackHeatClient(String url, String userName, String password, String tenantName) {
+  public OpenStackHeatClient(String url, String userName, String password, String tenantName)
+      throws IOException {
     this.url = url;
     this.userName = userName;
     this.password = password;
     this.tenantName = tenantName;
 
     Logger.debug(
-        "URL: " + url + "|User:" + userName + "|Tenant:" + tenantName + "|Pass:" + password + "|");
+        "URL: " + url + "|User:" + userName + "|Project:" + tenantName + "|Pass:" + password + "|");
 
     javaStack = JavaStackCore.getJavaStackCore();
     javaStack.setEndpoint(url);
     javaStack.setUsername(userName);
     javaStack.setPassword(password);
-    javaStack.setTenant_id(tenantName);
-
+    javaStack.setProjectName(tenantName);
+    javaStack.setProjectId(null);
+    javaStack.setAuthenticated(false);
     // Authenticate
-    try {
-      javaStack.authenticateClient();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    javaStack.authenticateClientV3();
+
   }
 
   /**
@@ -125,24 +126,26 @@ public class OpenStackHeatClient {
     } catch (Exception e) {
       Logger.error(
           "Runtime error creating stack : " + stackName + " error message: " + e.getMessage());
+      return null;
     }
 
     return uuid;
   }
 
-  public void updateStack(String stackName, String stackUuid, String template) {
+  public void updateStack(String stackName, String stackUuid, String template) throws Exception {
 
     Logger.info("Creating stack: " + stackName);
     // Logger.debug("Template:\n" + template);
 
     try {
 
-      String response = JavaStackUtils
+      JavaStackUtils
           .convertHttpResponseToString(javaStack.updateStack(stackName, stackUuid, template));
-      Logger.debug("Stack response: " + response);
+      // Logger.debug("Stack response: " + response);
     } catch (Exception e) {
       Logger.error(
           "Runtime error creating stack : " + stackName + " error message: " + e.getMessage());
+      throw new Exception("Runtime error creating stack : " + stackName + " error message: " + e.getMessage());
     }
 
     return;
@@ -275,16 +278,43 @@ public class OpenStackHeatClient {
         HeatServer heatServer = new HeatServer();
         HeatPort heatPort = new HeatPort();
 
-        // Logger.debug(resource.getResource_type());
+        Logger.debug(resource.getResource_type());
 
         // Show ResourceData
         // Logger.debug("StackID: " + uuid);
 
         String showResourceData = JavaStackUtils.convertHttpResponseToString(
             javaStack.showResourceData(stackName, uuid, resource.getResource_name()));
-
+        Logger.debug(showResourceData);
         switch (resource.getResource_type()) {
+          case "OS::Heat::ResourceGroup":
+            String groupStackUuid = resource.getPhysical_resource_id();
+            String groupStackName = this.getNestedStackName(resource);
+            Logger.debug("Get resource info for nested stack name: " + groupStackName + " -  ID: "
+                + groupStackUuid);
+            String groupListResources = JavaStackUtils.convertHttpResponseToString(
+                javaStack.listStackResources(groupStackName, groupStackUuid, null));
+            
+            ArrayList<Resource> groupResources =
+                mapper.readValue(groupListResources, Resources.class).getResources();
+            Logger.debug("Getting resources for resource group.");
+            String serverInGroupResource = null;
+            for (Resource groupResource : groupResources) {
+              HeatServer server= new HeatServer();
+              serverInGroupResource =
+                  JavaStackUtils.convertHttpResponseToString(javaStack.showResourceData(
+                      groupStackName, groupStackUuid, groupResource.getResource_name()));
 
+              Logger.debug("group resource info: " + serverInGroupResource);
+              ResourceData<ServerAttributes> serverResourceData = mapper.readValue(serverInGroupResource,
+                  new TypeReference<ResourceData<ServerAttributes>>() {});
+              // Set Server
+              server.setServerId(serverResourceData.getResource().getPhysical_resource_id());
+              server.setServerName(serverResourceData.getResource().getParent_resource() +"."+ serverResourceData.getResource().getResource_name());
+              Logger.debug("Server Object created: "+ mapper.writeValueAsString(server));
+              servers.add(server);
+            }
+            break;
           case "OS::Nova::Server":
             ResourceData<ServerAttributes> serverResourceData = mapper.readValue(showResourceData,
                 new TypeReference<ResourceData<ServerAttributes>>() {});
@@ -348,12 +378,32 @@ public class OpenStackHeatClient {
       composition.setPorts(ports);
       composition.setNets(networks);
       composition.setRouters(routers);
-
+      Logger.debug("Forged composition: " + mapper.writeValueAsString(composition));
     } catch (Exception e) {
       Logger.error("Runtime error getting composition for stack : " + stackName + " error message: "
           + e.getMessage());
+      e.printStackTrace();
     }
 
     return composition;
+  }
+
+  /**
+   * @param resource
+   * @return
+   */
+  private String getNestedStackName(Resource resource) {
+    ArrayList<Link> links = resource.getLinks();
+    Link nestedLink = null;
+    for (Link l : links) {
+      if (l.getRel().equals("nested")) {
+        nestedLink = l;
+        break;
+      }
+    }
+
+    String href = nestedLink.getHref();
+    String[] elements = href.split("/");
+    return elements[6];
   }
 }

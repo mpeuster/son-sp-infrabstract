@@ -38,7 +38,7 @@ public class NetworkMockWrapper extends NetworkWrapper {
   private WrapperConfiguration config;
 
   public NetworkMockWrapper(WrapperConfiguration config) {
-    this.config = config;
+    super(config);
   }
 
   /*
@@ -50,6 +50,16 @@ public class NetworkMockWrapper extends NetworkWrapper {
    */
   @Override
   public void configureNetworking(NetworkConfigurePayload data) throws Exception {
+    return;
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see sonata.kernel.vimadaptor.wrapper.NetworkWrapper#deconfigureNetworking(java.lang.String)
+   */
+  @Override
+  public void deconfigureNetworking(String instanceId) throws Exception {
     return;
   }
 

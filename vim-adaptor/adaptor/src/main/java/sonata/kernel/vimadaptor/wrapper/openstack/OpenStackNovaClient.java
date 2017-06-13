@@ -63,28 +63,32 @@ public class OpenStackNovaClient {
    * @param userName to log into the OpenStack service
    * @param password to log into the OpenStack service
    * @param tenantName to log into the OpenStack service
+   * @throws IOException if the authentication process fails
    */
-  public OpenStackNovaClient(String url, String userName, String password, String tenantName) {
+  public OpenStackNovaClient(String url, String userName, String password, String tenantName) throws IOException {
     this.url = url;
     this.userName = userName;
     this.password = password;
     this.tenantName = tenantName;
 
     Logger.debug(
-        "URL:" + url + "|User:" + userName + "|Tenant:" + tenantName + "|Pass:" + password + "|");
+        "URL:" + url + "|User:" + userName + "|Project:" + tenantName + "|Pass:" + password + "|");
 
     javaStack = JavaStackCore.getJavaStackCore();
+
     javaStack.setEndpoint(url);
     javaStack.setUsername(userName);
     javaStack.setPassword(password);
-    javaStack.setTenant_id(tenantName);
+    javaStack.setProjectId(null);
+    javaStack.setAuthenticated(false);
+    // javaStack.setTenantId(tenantName);
 
     // Authenticate
-    try {
-      javaStack.authenticateClient();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+//    try {
+      javaStack.authenticateClientV3();
+//    } catch (IOException e) {
+//      e.printStackTrace();
+//    }
   }
 
   /**

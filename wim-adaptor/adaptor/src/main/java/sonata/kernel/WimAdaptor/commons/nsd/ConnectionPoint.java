@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2015 SONATA-NFV, UCL, NOKIA, NCSR Demokritos ALL RIGHTS RESERVED.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -30,21 +30,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ConnectionPoint {
 
-  public enum Interface {
-    INTERFACE("interface");
-    private final String name;
-
-    Interface(String name) {
-      this.name = name;
-    }
-
-    public String toString() {
-      return this.name;
-    }
-  }
 
   private String id;
-  private Interface type;
+  @JsonProperty("interface")
+  private InterfaceType interfaceTye;
+  private ConnectionPointType type;
   @JsonProperty("virtua_link_reference")
   private String virtualLinkReference;
 
@@ -53,7 +43,7 @@ public class ConnectionPoint {
     this.id = id;
   }
 
-  public void setType(Interface type) {
+  public void setType(ConnectionPointType type) {
     this.type = type;
   }
 
@@ -65,7 +55,7 @@ public class ConnectionPoint {
     return id;
   }
 
-  public Interface getType() {
+  public ConnectionPointType getType() {
     return type;
   }
 

@@ -252,7 +252,8 @@ public class DeployServiceFsm implements Runnable {
                 ip.setNetmask("255.255.255.248");
 
               }
-              cpr.setType(ip);
+              cpr.setInterface(ip);
+              cpr.setType(cp.getType());
               break;
             }
           }
@@ -265,13 +266,14 @@ public class DeployServiceFsm implements Runnable {
         referenceVdur.addVnfcInstance(vnfc);
       }
 
-      NetworkWrapper netVim = (NetworkWrapper) WrapperBay.getInstance().getVimRepo()
-          .getNetworkVimFromComputeVimUuid(this.data.getVimUuid()).getVimWrapper();
+      NetworkWrapper netVim = (NetworkWrapper) WrapperBay.getInstance()
+          .getNetworkVimFromComputeVimUuid(this.data.getVimUuid());
 
       response.setVimUuid(data.getVimUuid());
       response.setInstanceName(stackName);
       response.setInstanceVimUuid(stackUuid);
-      response.setRequestStatus("DEPLOYED");
+      response.setRequestStatus("COMPLETED");
+      response.setMessage("");
 
 
       NetworkConfigurePayload netData = new NetworkConfigurePayload();
@@ -288,7 +290,7 @@ public class DeployServiceFsm implements Runnable {
         for (VduRecord vdur : vnfr.getVirtualDeploymentUnits()) {
           for (VnfcInstance vnfc : vdur.getVnfcInstance()) {
             for (ConnectionPointRecord cpr : vnfc.getConnectionPoints()) {
-              cpr.getType().setHardwareAddress(null);
+              cpr.getInterface().setHardwareAddress(null);
             }
           }
         }
@@ -305,8 +307,8 @@ public class DeployServiceFsm implements Runnable {
       wrapper.notifyObservers(update);
     } catch (Exception e) {
       Logger.error(e.getMessage(), e);
-      response.setRequestStatus("FAIL");
-      response.setErrorCode("DeploymentError");
+      response.setRequestStatus("ERROR");
+      response.setMessage(e.getMessage());
       response.setNsr(null);
       response.setVnfrs(null);
       try {

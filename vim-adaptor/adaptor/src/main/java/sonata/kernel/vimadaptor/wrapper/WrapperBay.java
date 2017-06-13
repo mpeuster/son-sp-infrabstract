@@ -26,15 +26,27 @@
 
 package sonata.kernel.vimadaptor.wrapper;
 
+import org.slf4j.LoggerFactory;
+
+import sonata.kernel.vimadaptor.commons.VimNetTable;
+
 import java.util.ArrayList;
+import java.util.Hashtable;
 
 public class WrapperBay {
 
   private static WrapperBay myInstance = null;
+  private static final org.slf4j.Logger Logger = LoggerFactory.getLogger(WrapperBay.class);
 
   private VimRepo repository = null;
 
-  private WrapperBay() {}
+  private Hashtable<String, ComputeWrapper> computeWrapperCache;
+  private Hashtable<String, NetworkWrapper> networkWrapperCache;
+
+  private WrapperBay() {
+    computeWrapperCache = new Hashtable<String, ComputeWrapper>();
+    networkWrapperCache = new Hashtable<String, NetworkWrapper>();
+  }
 
   /**
    * Singleton method to get the instance of the wrapperbay.
@@ -69,11 +81,11 @@ public class WrapperBay {
     Wrapper newWrapper = WrapperFactory.createWrapper(config);
     String output = "";
     if (newWrapper == null) {
-      output = "{\"status\":\"ERROR\",\"message\":\"Cannot Attach To Vim\"}";
+      output = "{\"request_status\":\"ERROR\",\"message\":\"Cannot Attach To Vim\"}";
     } else if (newWrapper.getType().equals(WrapperType.COMPUTE)) {
-      WrapperRecord record = new WrapperRecord(newWrapper, config, null);
-      this.repository.writeVimEntry(config.getUuid(), record);
-      output = "{\"status\":\"COMPLETED\",\"uuid\":\"" + config.getUuid() + "\"}";
+      //WrapperRecord record = new WrapperRecord(newWrapper, config, null);
+      this.repository.writeVimEntry(config.getUuid(),newWrapper);
+      output = "{\"request_status\":\"COMPLETED\",\"uuid\":\"" + config.getUuid() + "\"}";
     }
 
     return output;
@@ -102,8 +114,9 @@ public class WrapperBay {
    * @return a JSON representing the output of the API call
    */
   public String removeComputeWrapper(String uuid) {
+    VimNetTable.getInstance().deregisterVim(uuid);
     repository.removeVimEntry(uuid);
-    return "{\"status\":\"COMPLETED\"}";
+    return "{\"request_status\":\"COMPLETED\"}";
   }
 
 
@@ -126,11 +139,15 @@ public class WrapperBay {
    *         registered VIM
    */
   public ComputeWrapper getComputeWrapper(String vimUuid) {
-    WrapperRecord vimEntry = this.repository.readVimEntry(vimUuid);
-    if(vimEntry==null)
+    if (computeWrapperCache.containsKey(vimUuid))
+      return (ComputeWrapper) computeWrapperCache.get(vimUuid);
+    ComputeWrapper vimEntry = (ComputeWrapper) this.repository.readVimEntry(vimUuid);
+    if (vimEntry == null) {
       return null;
-    else
-      return (ComputeWrapper) vimEntry.getVimWrapper();
+    } else {
+      computeWrapperCache.put(vimUuid, vimEntry);
+      return vimEntry;
+    }
   }
 
 
@@ -146,12 +163,11 @@ public class WrapperBay {
     Wrapper newWrapper = WrapperFactory.createWrapper(config);
     String output = "";
     if (newWrapper == null) {
-      output = "{\"status\":\"ERROR\",\"message\":\"Cannot Attach To Vim\"}";
+      output = "{\"request_status\":\"ERROR\",\"message\":\"Cannot Attach To Vim\"}";
     } else {
-      WrapperRecord record = new WrapperRecord(newWrapper, config, null);
-      this.repository.writeVimEntry(config.getUuid(), record);
+      this.repository.writeVimEntry(config.getUuid(), newWrapper);
       this.repository.writeNetworkVimLink(computeVimRef, config.getUuid());
-      output = "{\"status\":\"COMPLETED\",\"uuid\":\"" + config.getUuid() + "\"}";
+      output = "{\"request_status\":\"COMPLETED\",\"uuid\":\"" + config.getUuid() + "\"}";
     }
     return output;
   }
@@ -173,7 +189,7 @@ public class WrapperBay {
   public String removeNetworkWrapper(String uuid) {
     this.repository.removeNetworkVimLink(uuid);
     this.repository.removeVimEntry(uuid);
-    return "{\"status\":\"COMPLETED\"}";
+    return "{\"request_status\":\"COMPLETED\"}";
   }
 
   /**
@@ -183,7 +199,35 @@ public class WrapperBay {
    * @return
    */
   public Wrapper getWrapper(String uuid) {
-    return this.repository.readVimEntry(uuid).getVimWrapper();
+    return this.repository.readVimEntry(uuid);
+  }
+
+  /**
+   * @param vimUuid
+   * @return
+   */
+  public NetworkWrapper getNetworkVimFromComputeVimUuid(String vimUuid) {
+    String netVimUuid = this.repository.getNetworkVimFromComputeVimUuid(vimUuid);
+    if (netVimUuid == null) {
+      Logger.error("can't find Networking VIM for compute VIM UUID: " + vimUuid);
+    }
+    if (networkWrapperCache.containsKey(netVimUuid)) {
+      return networkWrapperCache.get(netVimUuid);
+    }
+    NetworkWrapper netWrapper = this.repository.getNetworkVim(netVimUuid);
+    if (netWrapper == null) {
+      return null;
+    } else {
+      networkWrapperCache.put(vimUuid, netWrapper);
+      return netWrapper;
+    }
+  }
+
+  /**
+   * @return
+   */
+  public ArrayList<String> getNetworkWrapperList() {
+    return repository.getNetworkVims();
   }
 
 

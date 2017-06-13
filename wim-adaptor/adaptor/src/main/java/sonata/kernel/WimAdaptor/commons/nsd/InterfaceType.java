@@ -24,37 +24,18 @@
  * 
  */
 
-package sonata.kernel.vimadaptor.wrapper;
+package sonata.kernel.WimAdaptor.commons.nsd;
 
-public class WrapperRecord {
+public enum InterfaceType {
+  IPV4("ipv4"), IPV6("ipv6"), ethernet("ethernet");
+  private final String name;
 
-  private WrapperConfiguration config;
-  private Wrapper vimWrapper;
-  private ResourceDescriptor resources;
-
-  public WrapperConfiguration getConfig() {
-    return config;
+  InterfaceType(String name) {
+    this.name = name;
   }
 
-  public Wrapper getVimWrapper() {
-    return vimWrapper;
-  }
-
-  public ResourceDescriptor getResources() {
-    return resources;
-  }
-
-  /**
-   * Create a WrapperRecord to be store in the WrapperBay
-   * 
-   * @param wrapper The Wrapper object to be recorded.
-   * @param config The WrapperConfiguration object describing the wrapper to be recorded.
-   * @param resources The ResourceDescription object representing the resource availability of the
-   *        wrapper to be recorded.
-   */
-  public WrapperRecord(Wrapper wrapper, WrapperConfiguration config, ResourceDescriptor resources) {
-    this.config = config;
-    this.vimWrapper = wrapper;
-    this.resources = resources;
+  @Override
+  public String toString() {
+    return this.name;
   }
 }

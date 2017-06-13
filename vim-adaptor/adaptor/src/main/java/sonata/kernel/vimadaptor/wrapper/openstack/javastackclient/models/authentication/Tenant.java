@@ -26,9 +26,12 @@
 
 package sonata.kernel.vimadaptor.wrapper.openstack.javastackclient.models.authentication;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * Created by nle5220 on 20.10.2016.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Tenant {
   private String id;
   private String description;
