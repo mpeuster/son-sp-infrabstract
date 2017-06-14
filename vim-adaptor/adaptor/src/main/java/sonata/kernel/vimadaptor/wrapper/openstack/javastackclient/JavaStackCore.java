@@ -174,7 +174,7 @@ public class JavaStackCore {
     //AUTH_PORT("6001"), HEAT_PORT("9005"), IMAGE_PORT("10243"), COMPUTE_PORT("9775"), HEAT_VERSION(
     //        "v1"), IMAGE_VERSION("v2"), COMPUTE_VERSION(
     //        "v2"), AUTHTOKEN_HEADER("X-AUTH-TOKEN"), AUTH_URI("/v2.0/tokens");
-    AUTH_PORT("5000"), AUTHTOKEN_HEADER("X-AUTH-TOKEN"), AUTH_URI_V2("/v2.0/tokens"), AUTH_URI_V3(
+    AUTH_PORT("6001"), AUTHTOKEN_HEADER("X-AUTH-TOKEN"), AUTH_URI_V2("/v2.0/tokens"), AUTH_URI_V3(
         "/v3/auth/tokens");
 
     private final String constantValue;
@@ -324,6 +324,7 @@ public class JavaStackCore {
             String[] path_port = endpointItem.getUrl().split(":");;
             String[] path = path_port[2].split("/");
             String version, port;
+            port = null;
 
             switch (type) {
               case "identity":
@@ -363,6 +364,7 @@ public class JavaStackCore {
               default:
                 Logger.warn("[JavaStack]Unhandled endpoint type: "+type+". skipping");
             }
+            System.out.println("ENDPOINT type:"+type+" with port:" + port);
           }
         }
       }
