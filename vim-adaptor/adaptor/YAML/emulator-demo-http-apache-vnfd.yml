@@ -1,7 +1,7 @@
 ---
 descriptor_version: "vnfd-schema-01"
 vendor: "eu.sonata-nfv"
-name: "emulator-apache-vnf"
+name: "apache-vnf"
 version: "0.1"
 author: "Manuel Peuster, Paderborn University <manuel.peuster@upb.de>"
 description: "Apache HTTP server VNF"

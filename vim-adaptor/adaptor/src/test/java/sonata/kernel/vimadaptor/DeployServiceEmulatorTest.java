@@ -200,7 +200,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     output = null;
     String baseInstanceUuid = data.getNsd().getInstanceUuid();
     data.setVimUuid(computeWrUuid);
-    data.getNsd().setInstanceUuid(baseInstanceUuid + "-01");
+    data.getNsd().setInstanceUuid(""); // lets keep the name short! //(baseInstanceUuid + "-01");
 
     String body = mapper.writeValueAsString(data);
 

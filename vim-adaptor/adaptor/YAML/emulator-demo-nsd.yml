@@ -2,7 +2,7 @@
 descriptor_version: "1.0"
 
 vendor: "eu.sonata-nfv.service-descriptor"
-name: "emulator-demo"
+name: "demo-nsd"
 version: "0.1"
 author: "Manuel Peuster, Paderborn University <manuel.peuster@upb.de>"
 description: "Emulator demo service."
@@ -14,15 +14,15 @@ description: "Emulator demo service."
 network_functions:
   - vnf_id: "vnf_proxy"
     vnf_vendor: "eu.sonata-nfv"
-    vnf_name: "emulator-squid-vnf"
+    vnf_name: "squid-vnf"
     vnf_version: "0.1"
   - vnf_id: "vnf_l4fw"
     vnf_vendor: "eu.sonata-nfv"
-    vnf_name: "emulator-socat-vnf"
+    vnf_name: "socat-vnf"
     vnf_version: "0.1"
   - vnf_id: "vnf_http"
     vnf_vendor: "eu.sonata-nfv"
-    vnf_name: "emulator-apache-vnf"
+    vnf_name: "apache-vnf"
     vnf_version: "0.1"
 
 ##

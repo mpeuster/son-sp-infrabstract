@@ -1,7 +1,7 @@
 ---
 descriptor_version: "vnfd-schema-01"
 vendor: "eu.sonata-nfv"
-name: "emulator-socat-vnf"
+name: "socat-vnf"
 version: "0.1"
 author: "Manuel Peuster, Paderborn University <manuel.peuster@upb.de>"
 description: "Socat L4 forwarder VNF"
