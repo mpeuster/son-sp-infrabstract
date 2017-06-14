@@ -23,10 +23,13 @@ virtual_deployment_units:
         size_unit: "GB"
     connection_points:
       - id: "vdu01:eth0"
-        type: "public"
+        interface: "ipv4"
+        type: "internal"
       - id: "vdu01:eth1"
+        interface: "ipv4"
         type: "internal"
       - id: "vdu01:eth2"
+        interface: "ipv4"
         type: "internal"
 
 ##
@@ -56,10 +59,13 @@ virtual_links:
 ##
 connection_points:
   - id: "vnf:mgmt"
-    type: "public"
+    interface: "ipv4"
+    type: "management"
   - id: "vnf:input"
+    interface: "ipv4"
     type: "internal"
   - id: "vnf:output"
+    interface: "ipv4"
     type: "internal"
 uuid: 6a15313f-cb0a-4540-baa2-77cc6b3f5673
 instance_uuid: 6a15313f-cb0a-4540-baa2-77cc6b3f0003

@@ -142,6 +142,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
    *
    * @throws Exception
    */
+  //@Test //@Ignore
   @Test
   public void testDeployServiceEmulatorOpenStackApi() throws Exception {
 
@@ -168,12 +169,13 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
       Assert.assertTrue(false);
     }
 
-    // PoP local emulator
-    String addVimBody = "{\"vim_type\":\"Heat\", "
-        + "\"tenant_ext_router\":\"0e5d6e42-e544-4ec3-8ce1-9ac950ae994b\", "
-        + "\"tenant_ext_net\":\"c999f013-2022-4464-b44f-88f4437f23b0\","
-        + "\"vim_address\":\"127.0.0.1\",\"username\":\"username\","
-        + "\"pass\":\"password\",\"tenant\":\"tenantName\"}";
+    String addVimBody = "{\"vim_type\":\"Heat\", " + "\"configuration\":{"
+            + "\"tenant_ext_router\":\"26f732b2-74bd-4f8c-a60e-dae4fb6a7c14\", "
+            + "\"tenant_ext_net\":\"53d43a3e-8c86-48e6-b1cb-f1f2c48833de\"," + "\"tenant\":\"tenantName\""
+            + "}," + "\"city\":\"Paderborn\",\"country\":\"Germany\","
+            + "\"vim_address\":\"127.0.0.1\",\"username\":\"username\","
+            +"\"name\":\"EmulatorVim\","
+            + "\"pass\":\"password\"}";
 
     String topic = "infrastructure.management.compute.add";
     ServicePlatformMessage addVimMessage = new ServicePlatformMessage(addVimBody,
@@ -188,7 +190,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
 
     JSONTokener tokener = new JSONTokener(output);
     JSONObject jsonObject = (JSONObject) tokener.nextValue();
-    String status = jsonObject.getString("status");
+    String status = jsonObject.getString("request_status");
     String computeWrUuid = jsonObject.getString("uuid");
     Assert.assertTrue(status.equals("COMPLETED"));
     System.out.println("OpenStack Wrapper added, with uuid: " + computeWrUuid);
@@ -340,7 +342,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     */
   }
 
-  @Test
+  @Ignore
   public void testPrepareService() throws JsonProcessingException {
 
     ServicePreparePayload payload = new ServicePreparePayload();
