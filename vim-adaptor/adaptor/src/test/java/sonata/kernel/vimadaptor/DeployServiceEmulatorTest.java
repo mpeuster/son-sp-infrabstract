@@ -198,7 +198,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     System.out.println("OpenStack Wrapper added, with uuid: " + computeWrUuid1);
 
     // Add second PoP
-    System.out.println("[TwoPoPTest] Adding PoP 1");
+    System.out.println("[TwoPoPTest] Adding PoP 2");
     addVimBody = "{\"vim_type\":\"Heat\", " + "\"configuration\":{"
             + "\"tenant_ext_router\":\"26f732b2-74bd-4f8c-a60e-dae4fb6a7c14\", "
             + "\"tenant_ext_net\":\"53d43a3e-8c86-48e6-b1cb-f1f2c48833de\"," + "\"tenant\":\"tenantName\""
