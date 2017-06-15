@@ -169,18 +169,20 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
       Assert.assertTrue(false);
     }
 
+
+    // Add first PoP
+    System.out.println("[TwoPoPTest] Adding PoP 1");
     String addVimBody = "{\"vim_type\":\"Heat\", " + "\"configuration\":{"
             + "\"tenant_ext_router\":\"26f732b2-74bd-4f8c-a60e-dae4fb6a7c14\", "
             + "\"tenant_ext_net\":\"53d43a3e-8c86-48e6-b1cb-f1f2c48833de\"," + "\"tenant\":\"tenantName\""
             + "}," + "\"city\":\"Paderborn\",\"country\":\"Germany\","
-            + "\"vim_address\":\"127.0.0.1\",\"username\":\"username\","
-            +"\"name\":\"EmulatorVim\","
+            + "\"vim_address\":\"127.0.0.1:6001\",\"username\":\"username\","
+            +"\"name\":\"EmulatorVim1\","
             + "\"pass\":\"password\"}";
 
     String topic = "infrastructure.management.compute.add";
-    ServicePlatformMessage addVimMessage = new ServicePlatformMessage(addVimBody,
-        "application/json", topic, UUID.randomUUID().toString(), topic);
-
+    ServicePlatformMessage addVimMessage = new ServicePlatformMessage(addVimBody, "application/json", topic,
+            UUID.randomUUID().toString(), topic);
     consumer.injectMessage(addVimMessage);
     Thread.sleep(2000);
     while (output == null)
@@ -191,12 +193,273 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     JSONTokener tokener = new JSONTokener(output);
     JSONObject jsonObject = (JSONObject) tokener.nextValue();
     String status = jsonObject.getString("request_status");
+    String computeWrUuid1 = jsonObject.getString("uuid");
+    Assert.assertTrue(status.equals("COMPLETED"));
+    System.out.println("OpenStack Wrapper added, with uuid: " + computeWrUuid1);
+
+    // Add second PoP
+    System.out.println("[TwoPoPTest] Adding PoP 1");
+    addVimBody = "{\"vim_type\":\"Heat\", " + "\"configuration\":{"
+            + "\"tenant_ext_router\":\"26f732b2-74bd-4f8c-a60e-dae4fb6a7c14\", "
+            + "\"tenant_ext_net\":\"53d43a3e-8c86-48e6-b1cb-f1f2c48833de\"," + "\"tenant\":\"tenantName\""
+            + "}," + "\"city\":\"Paderborn\",\"country\":\"Germany\","
+            + "\"vim_address\":\"127.0.0.1:6002\",\"username\":\"username\","
+            +"\"name\":\"EmulatorVim2\","
+            + "\"pass\":\"password\"}";
+
+    topic = "infrastructure.management.compute.add";
+    addVimMessage = new ServicePlatformMessage(addVimBody, "application/json", topic,
+            UUID.randomUUID().toString(), topic);
+    consumer.injectMessage(addVimMessage);
+    Thread.sleep(2000);
+    while (output == null)
+      synchronized (mon) {
+        mon.wait(1000);
+      }
+
+    tokener = new JSONTokener(output);
+    jsonObject = (JSONObject) tokener.nextValue();
+    status = jsonObject.getString("request_status");
     String computeWrUuid = jsonObject.getString("uuid");
     Assert.assertTrue(status.equals("COMPLETED"));
     System.out.println("OpenStack Wrapper added, with uuid: " + computeWrUuid);
 
+    /*
+    output = null;
+    addNetVimBody = "{\"vim_type\":\"ovs\", "
+            +"\"name\":\"Athens2-net\","+ "\"vim_address\":\"10.100.32.10\",\"username\":\"operator\",\"city\":\"Athens\",\"country\":\"Greece\","
+            + "\"pass\":\"apass\",\"configuration\":{\"compute_uuid\":\"" + computeWrUuid2 + "\"}}";
+    topic = "infrastructure.management.network.add";
+    addNetVimMessage = new ServicePlatformMessage(addNetVimBody, "application/json", topic,
+            UUID.randomUUID().toString(), topic);
+    consumer.injectMessage(addNetVimMessage);
+    Thread.sleep(2000);
+    while (output == null)
+      synchronized (mon) {
+        mon.wait(1000);
+      }
 
-    // deploy service
+    tokener = new JSONTokener(output);
+    jsonObject = (JSONObject) tokener.nextValue();
+    status = null;
+    status = jsonObject.getString("request_status");
+    String netWrUuid2 = jsonObject.getString("uuid");
+    Assert.assertTrue("Failed to add the ovs wrapper. Status " + status,
+            status.equals("COMPLETED"));
+    System.out.println("OVS Wrapper added, with uuid: " + netWrUuid2);
+    */
+
+    // List available PoP
+    output = null;
+    System.out.println("[TwoPoPTest] Listing available NFVIi-PoP.");
+
+    topic = "infrastructure.management.compute.list";
+    ServicePlatformMessage listVimMessage =
+            new ServicePlatformMessage(null, null, topic, UUID.randomUUID().toString(), topic);
+    consumer.injectMessage(listVimMessage);
+
+    while (output == null) {
+      synchronized (mon) {
+        mon.wait(1000);
+      }
+    }
+    System.out.println(output);
+    VimResources[] vimList = mapper.readValue(output, VimResources[].class);
+    System.out.println("[TwoPoPTest] Listing available PoP");
+    for (VimResources resource : vimList) {
+      System.out.println(mapper.writeValueAsString(resource));
+    }
+
+    /*
+    output = null;
+    // Prepare the system for a service deployment
+    System.out.println("[TwoPoPTest] Building service.prepare call.");
+
+    ServicePreparePayload payload = new ServicePreparePayload();
+
+    payload.setInstanceId(data.getNsd().getInstanceUuid());
+    ArrayList<VimPreDeploymentList> vims = new ArrayList<VimPreDeploymentList>();
+    VimPreDeploymentList vimDepList = new VimPreDeploymentList();
+    vimDepList.setUuid(computeWrUuid1);
+    ArrayList<VnfImage> vnfImages = new ArrayList<VnfImage>();
+    VnfImage vtcImgade =
+            // new VnfImage("eu.sonata-nfv_vtc-vnf_0.1_vdu01", "file:///test_images/sonata-vtc.img");
+            new VnfImage("eu.sonata-nfv_vtc-vnf_0.1_vdu01",
+                    "http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img");
+
+    vnfImages.add(vtcImgade);
+    vimDepList.setImages(vnfImages);
+    vims.add(vimDepList);
+
+
+
+    vimDepList = new VimPreDeploymentList();
+    vimDepList.setUuid(computeWrUuid2);
+    vnfImages = new ArrayList<VnfImage>();
+    VnfImage vfwImgade =
+            // new VnfImage("eu.sonata-nfv_fw-vnf_0.1_1", "file:///test_images/sonata-vfw.img");
+            new VnfImage("eu.sonata-nfv_fw-vnf_0.1_1",
+                    "http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img");
+    vnfImages.add(vfwImgade);
+    vimDepList.setImages(vnfImages);
+    vims.add(vimDepList);
+
+    payload.setVimList(vims);
+
+    String body = mapper.writeValueAsString(payload);
+    System.out.println("[TwoPoPTest] Request body:");
+    System.out.println(body);
+
+    topic = "infrastructure.service.prepare";
+    ServicePlatformMessage servicePrepareMessage = new ServicePlatformMessage(body,
+            "application/x-yaml", topic, UUID.randomUUID().toString(), topic);
+
+    consumer.injectMessage(servicePrepareMessage);
+
+    Thread.sleep(2000);
+    while (output == null)
+      synchronized (mon) {
+        mon.wait(1000);
+      }
+
+    tokener = new JSONTokener(output);
+    jsonObject = (JSONObject) tokener.nextValue();
+    status = null;
+    status = jsonObject.getString("request_status");
+    String message = jsonObject.getString("message");
+    Assert.assertTrue("Failed to prepare the environment for the service deployment: " + status
+            + " - message: " + message, status.equals("COMPLETED"));
+    System.out.println("Service " + payload.getInstanceId() + " ready for deployment");
+
+    */
+
+    /*
+
+    // Deploy the two VNFs, one in each PoP
+    ArrayList<VnfRecord> records = new ArrayList<VnfRecord>();
+
+    // vTC VNF in PoP#1
+    output = null;
+
+    FunctionDeployPayload vnfPayload = new FunctionDeployPayload();
+    vnfPayload.setVnfd(vtcVnfd);
+    vnfPayload.setVimUuid(computeWrUuid1);
+    vnfPayload.setServiceInstanceId(data.getNsd().getInstanceUuid());
+    body = mapper.writeValueAsString(vnfPayload);
+
+    topic = "infrastructure.function.deploy";
+    ServicePlatformMessage functionDeployMessage = new ServicePlatformMessage(body,
+            "application/x-yaml", topic, UUID.randomUUID().toString(), topic);
+
+    consumer.injectMessage(functionDeployMessage);
+
+    Thread.sleep(2000);
+    while (output == null)
+      synchronized (mon) {
+        mon.wait(1000);
+      }
+    Assert.assertNotNull(output);
+    int retry = 0;
+    int maxRetry = 60;
+    while (output.contains("heartbeat") || output.contains("Vim Added") && retry < maxRetry) {
+      synchronized (mon) {
+        mon.wait(1000);
+        retry++;
+      }
+    }
+
+    System.out.println("FunctionDeployResponse: ");
+    System.out.println(output);
+    Assert.assertTrue("No response received after function deployment", retry < maxRetry);
+    FunctionDeployResponse response = mapper.readValue(output, FunctionDeployResponse.class);
+    Assert.assertTrue(response.getRequestStatus().equals("COMPLETED"));
+    Assert.assertTrue(response.getVnfr().getStatus() == Status.offline);
+    records.add(response.getVnfr());
+
+    // vFw VNF in PoP#2
+    output = null;
+    response = null;
+
+    vnfPayload = new FunctionDeployPayload();
+    vnfPayload.setVnfd(vfwVnfd);
+    vnfPayload.setVimUuid(computeWrUuid2);
+    vnfPayload.setServiceInstanceId(data.getNsd().getInstanceUuid());
+    body = mapper.writeValueAsString(vnfPayload);
+
+    topic = "infrastructure.function.deploy";
+    functionDeployMessage = new ServicePlatformMessage(body, "application/x-yaml", topic,
+            UUID.randomUUID().toString(), topic);
+
+    consumer.injectMessage(functionDeployMessage);
+
+    Thread.sleep(2000);
+    while (output == null)
+      synchronized (mon) {
+        mon.wait(1000);
+      }
+    Assert.assertNotNull(output);
+    retry = 0;
+    maxRetry = 60;
+    while (output.contains("heartbeat") || output.contains("Vim Added") && retry < maxRetry) {
+      synchronized (mon) {
+        mon.wait(1000);
+        retry++;
+      }
+    }
+
+    System.out.println("FunctionDeployResponse: ");
+    System.out.println(output);
+    Assert.assertTrue("No response received after function deployment", retry < maxRetry);
+    response = mapper.readValue(output, FunctionDeployResponse.class);
+    Assert.assertTrue(response.getRequestStatus().equals("COMPLETED"));
+    Assert.assertTrue(response.getVnfr().getStatus() == Status.offline);
+    records.add(response.getVnfr());
+
+    */
+
+    /*
+
+    // Finally configure Networking in each NFVi-PoP (VIMs)
+
+    output = null;
+
+    NetworkConfigurePayload netPayload = new NetworkConfigurePayload();
+    netPayload.setNsd(data.getNsd());
+    netPayload.setVnfds(data.getVnfdList());
+    netPayload.setVnfrs(records);
+    netPayload.setServiceInstanceId(data.getNsd().getInstanceUuid());
+
+
+    body = mapper.writeValueAsString(netPayload);
+
+    topic = "infrastructure.service.chain.configure";
+    ServicePlatformMessage networkConfigureMessage = new ServicePlatformMessage(body,
+            "application/x-yaml", topic, UUID.randomUUID().toString(), topic);
+
+    consumer.injectMessage(networkConfigureMessage);
+
+    Thread.sleep(2000);
+    while (output == null)
+      synchronized (mon) {
+        mon.wait(1000);
+      }
+
+    System.out.println(output);
+    tokener = new JSONTokener(output);
+    jsonObject = (JSONObject) tokener.nextValue();
+    status = null;
+    status = jsonObject.getString("request_status");
+    Assert.assertTrue("Failed to configure inter-PoP SFC. status:" + status,
+            status.equals("COMPLETED"));
+    System.out.println(
+            "Service " + payload.getInstanceId() + " deployed and configured in selected VIM(s)");
+
+    output = null;
+
+    */
+
+    /*
+    // deploy service (V1)
     output = null;
     String baseInstanceUuid = data.getNsd().getInstanceUuid();
     data.setVimUuid(computeWrUuid);
@@ -236,81 +499,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     //  Assert.assertTrue(vnfr.getStatus() == Status.offline);
 
 
-    // Service removal
-    /*
-    output = null;
-    String instanceUuid = baseInstanceUuid + "-01";
-    String message = "{\"instance_uuid\":\"" + instanceUuid + "\"}";
-    topic = "infrastructure.service.remove";
-    ServicePlatformMessage removeInstanceMessage = new ServicePlatformMessage(message,
-        "application/json", topic, UUID.randomUUID().toString(), topic);
-    consumer.injectMessage(removeInstanceMessage);
-
-    while (output == null) {
-      synchronized (mon) {
-        mon.wait(2000);
-        System.out.println(output);
-      }
-    }
-    System.out.println(output);
-    tokener = new JSONTokener(output);
-    jsonObject = (JSONObject) tokener.nextValue();
-    status = jsonObject.getString("request_status");
-    Assert.assertTrue("Adapter returned an unexpected status: " + status, status.equals("SUCCESS"));
-    */
-
-    /*
-    // VIM removal
-    output = null;
-    String message = "{\"uuid\":\"" + computeWrUuid + "\"}";
-    topic = "infrastructure.management.compute.remove";
-    ServicePlatformMessage removeVimMessage = new ServicePlatformMessage(message,
-        "application/json", topic, UUID.randomUUID().toString(), topic);
-    consumer.injectMessage(removeVimMessage);
-
-    while (output == null) {
-      synchronized (mon) {
-        mon.wait(1000);
-      }
-    }
-    System.out.println(output);
-    tokener = new JSONTokener(output);
-    jsonObject = (JSONObject) tokener.nextValue();
-    status = jsonObject.getString("status");
-    Assert.assertTrue(status.equals("COMPLETED"));
-    */
-
-    /*
-    // remove NetVim
-    output = null;
-    message = "{\"uuid\":\"" + netWrUuid + "\"}";
-    topic = "infrastructure.management.compute.remove";
-    ServicePlatformMessage removeNetVimMessage = new ServicePlatformMessage(message,
-        "application/json", topic, UUID.randomUUID().toString(), topic);
-    consumer.injectMessage(removeNetVimMessage);
-
-    while (output == null) {
-      synchronized (mon) {
-        mon.wait(1000);
-      }
-    }
-    System.out.println(output);
-    tokener = new JSONTokener(output);
-    jsonObject = (JSONObject) tokener.nextValue();
-    status = jsonObject.getString("status");
-    Assert.assertTrue(status.equals("COMPLETED"));
-
-    core.stop();
-
-
-    // clean the SFC engine
-    /*
-    System.out.println("Cleaning the SFC environment...");
-    WrapperConfiguration config = new WrapperConfiguration();
-    config.setVimEndpoint("10.100.32.200");
-    OvsWrapper wrapper = new OvsWrapper(config);
-    wrapper.deconfigureNetworking(dataV1.getNsd().getInstanceUuid());
-    */
+   */
   }
 
   @Ignore
