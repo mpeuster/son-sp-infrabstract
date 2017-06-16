@@ -171,12 +171,12 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
 
 
     // Add first PoP
-    System.out.println("[TwoPoPTest] Adding PoP 1");
+    System.out.println("[EmulatorTest] Adding PoP 1");
     String addVimBody = "{\"vim_type\":\"Heat\", " + "\"configuration\":{"
             + "\"tenant_ext_router\":\"26f732b2-74bd-4f8c-a60e-dae4fb6a7c14\", "
             + "\"tenant_ext_net\":\"53d43a3e-8c86-48e6-b1cb-f1f2c48833de\"," + "\"tenant\":\"tenantName\""
             + "}," + "\"city\":\"Paderborn\",\"country\":\"Germany\","
-            + "\"vim_address\":\"127.0.0.1:6001\",\"username\":\"username\","
+            + "\"vim_address\":\"127.0.0.1\",\"username\":\"username\","
             +"\"name\":\"EmulatorVim1\","
             + "\"pass\":\"password\"}";
 
@@ -197,13 +197,14 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     Assert.assertTrue(status.equals("COMPLETED"));
     System.out.println("OpenStack Wrapper added, with uuid: " + computeWrUuid1);
 
+    /* we are not allowed to specify ports so a second emulator PoP does not work for nows
     // Add second PoP
-    System.out.println("[TwoPoPTest] Adding PoP 2");
+    System.out.println("[EmulatorTest] Adding PoP 2");
     addVimBody = "{\"vim_type\":\"Heat\", " + "\"configuration\":{"
             + "\"tenant_ext_router\":\"26f732b2-74bd-4f8c-a60e-dae4fb6a7c14\", "
             + "\"tenant_ext_net\":\"53d43a3e-8c86-48e6-b1cb-f1f2c48833de\"," + "\"tenant\":\"tenantName\""
             + "}," + "\"city\":\"Paderborn\",\"country\":\"Germany\","
-            + "\"vim_address\":\"127.0.0.1:6002\",\"username\":\"username\","
+            + "\"vim_address\":\"127.0.0.1\",\"username\":\"username\","
             +"\"name\":\"EmulatorVim2\","
             + "\"pass\":\"password\"}";
 
@@ -223,6 +224,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     String computeWrUuid = jsonObject.getString("uuid");
     Assert.assertTrue(status.equals("COMPLETED"));
     System.out.println("OpenStack Wrapper added, with uuid: " + computeWrUuid);
+    */
 
     /*
     output = null;
@@ -251,7 +253,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
 
     // List available PoP
     output = null;
-    System.out.println("[TwoPoPTest] Listing available NFVIi-PoP.");
+    System.out.println("[EmulatorTest] Listing available NFVIi-PoP.");
 
     topic = "infrastructure.management.compute.list";
     ServicePlatformMessage listVimMessage =
@@ -273,7 +275,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     /*
     output = null;
     // Prepare the system for a service deployment
-    System.out.println("[TwoPoPTest] Building service.prepare call.");
+    System.out.println("[EmulatorTest] Building service.prepare call.");
 
     ServicePreparePayload payload = new ServicePreparePayload();
 
@@ -307,7 +309,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     payload.setVimList(vims);
 
     String body = mapper.writeValueAsString(payload);
-    System.out.println("[TwoPoPTest] Request body:");
+    System.out.println("[EmulatorTest] Request body:");
     System.out.println(body);
 
     topic = "infrastructure.service.prepare";

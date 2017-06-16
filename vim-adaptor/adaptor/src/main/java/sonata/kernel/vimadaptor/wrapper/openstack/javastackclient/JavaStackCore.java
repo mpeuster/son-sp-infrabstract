@@ -280,8 +280,8 @@ public class JavaStackCore {
       StringBuilder buildUrl = new StringBuilder();
       buildUrl.append("http://");
       buildUrl.append(endpoint);
-      //buildUrl.append(":");  // disabled this for emulator integration
-      //buildUrl.append(Constants.AUTH_PORT.toString());
+      buildUrl.append(":");
+      buildUrl.append(Constants.AUTH_PORT.toString());
       buildUrl.append(Constants.AUTH_URI_V3.toString());
 
       post = new HttpPost(buildUrl.toString());
