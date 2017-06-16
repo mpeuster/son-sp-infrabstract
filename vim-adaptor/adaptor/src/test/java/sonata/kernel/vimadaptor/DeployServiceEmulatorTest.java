@@ -272,7 +272,6 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
       System.out.println(mapper.writeValueAsString(resource));
     }
 
-    /*
     output = null;
     // Prepare the system for a service deployment
     System.out.println("[EmulatorTest] Building service.prepare call.");
@@ -284,17 +283,18 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     VimPreDeploymentList vimDepList = new VimPreDeploymentList();
     vimDepList.setUuid(computeWrUuid1);
     ArrayList<VnfImage> vnfImages = new ArrayList<VnfImage>();
-    VnfImage vtcImgade =
+    VnfImage vnfImgae1 =
             // new VnfImage("eu.sonata-nfv_vtc-vnf_0.1_vdu01", "file:///test_images/sonata-vtc.img");
-            new VnfImage("eu.sonata-nfv_vtc-vnf_0.1_vdu01",
-                    "http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img");
+            //new VnfImage("eu.sonata-nfv_vtc-vnf_0.1_vdu01",
+            //        "http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img");
+            new VnfImage("eu.sonata-nfv_vnf1_0.1_vdu01",
+                            "docker://mpeuster/ubunut:trsuty");
 
-    vnfImages.add(vtcImgade);
+    vnfImages.add(vnfImgae1);
     vimDepList.setImages(vnfImages);
     vims.add(vimDepList);
 
-
-
+    /* second PoP preparation
     vimDepList = new VimPreDeploymentList();
     vimDepList.setUuid(computeWrUuid2);
     vnfImages = new ArrayList<VnfImage>();
@@ -305,6 +305,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     vnfImages.add(vfwImgade);
     vimDepList.setImages(vnfImages);
     vims.add(vimDepList);
+    */
 
     payload.setVimList(vims);
 
@@ -333,7 +334,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
             + " - message: " + message, status.equals("COMPLETED"));
     System.out.println("Service " + payload.getInstanceId() + " ready for deployment");
 
-    */
+
 
     /*
 
