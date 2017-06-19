@@ -1164,32 +1164,34 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
     Logger.debug("Creating new image: " + image.getUuid());
     String imageUuid = glance.createImage(image.getUuid());
 
-    URL website = new URL(image.getUrl());
-    String fileName = website.getPath().substring(website.getPath().lastIndexOf("/"));
-    ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-    String fileAbsolutePath = "/tmp/" + fileName;
-    FileOutputStream fos = new FileOutputStream(fileAbsolutePath);
-    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-    fos.flush();
-    fos.close();
+    if(!image.getUrl().startsWith("docker://")) {
+      URL website = new URL(image.getUrl());
+      String fileName = website.getPath().substring(website.getPath().lastIndexOf("/"));
+      ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+      String fileAbsolutePath = "/tmp/" + fileName;
+      FileOutputStream fos = new FileOutputStream(fileAbsolutePath);
+      fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+      fos.flush();
+      fos.close();
 
-    Logger.debug("Uploading new image from " + fileAbsolutePath);
+      Logger.debug("Uploading new image from " + fileAbsolutePath);
 
-    glance.uploadImage(imageUuid, fileAbsolutePath);
+      glance.uploadImage(imageUuid, fileAbsolutePath);
 
 
-    File f = new File(fileAbsolutePath);
-    if (f.delete()) {
-      Logger.debug("temporary image file deleted succesfully from local environment.");
-    } else {
-      Logger.error("Error deleting the temporary image file " + fileName
-          + " from local environment. Relevant VNF: " + image.getUuid());
-      throw new IOException("Error deleting the temporary image file " + fileName
-          + " from local environment. Relevant VNF: " + image.getUuid());
+      File f = new File(fileAbsolutePath);
+      if (f.delete()) {
+        Logger.debug("temporary image file deleted succesfully from local environment.");
+      } else {
+        Logger.error("Error deleting the temporary image file " + fileName
+                + " from local environment. Relevant VNF: " + image.getUuid());
+        throw new IOException("Error deleting the temporary image file " + fileName
+                + " from local environment. Relevant VNF: " + image.getUuid());
+      }
+      long stop = System.currentTimeMillis();
+
+      Logger.info("[OpenStackWrapper]UploadImage-time: " + (stop - start) + " ms");
     }
-    long stop = System.currentTimeMillis();
-    
-    Logger.info("[OpenStackWrapper]UploadImage-time: " + (stop-start) + " ms");
   }
 
   /*

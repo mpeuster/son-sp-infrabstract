@@ -284,13 +284,19 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     vimDepList.setUuid(computeWrUuid1);
     ArrayList<VnfImage> vnfImages = new ArrayList<VnfImage>();
     VnfImage vnfImgae1 =
-            // new VnfImage("eu.sonata-nfv_vtc-vnf_0.1_vdu01", "file:///test_images/sonata-vtc.img");
-            //new VnfImage("eu.sonata-nfv_vtc-vnf_0.1_vdu01",
-            //        "http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img");
-            new VnfImage("eu.sonata-nfv_vnf1_0.1_vdu01",
-                            "docker://mpeuster/ubunut:trsuty");
+            new VnfImage("sonata-squid",
+                            "docker://sonata-squid:latest");
+    VnfImage vnfImgae2 =
+            new VnfImage("sonata-socat",
+                    "docker://sonata-socat:latest");
+    VnfImage vnfImgae3 =
+            new VnfImage("sonata-apache",
+                    "docker://sonata-apache:latest");
 
     vnfImages.add(vnfImgae1);
+    vnfImages.add(vnfImgae2);
+    vnfImages.add(vnfImgae3);
+
     vimDepList.setImages(vnfImages);
     vims.add(vimDepList);
 
