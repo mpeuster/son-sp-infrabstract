@@ -73,6 +73,9 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
   private ServiceDeployPayload data;
   private ServiceDeployPayload dataV1;
   private ServiceDeployPayload data1V1;
+  private VnfDescriptor vnfd_apache;
+  private VnfDescriptor vnfd_socat;
+  private VnfDescriptor vnfd_squid;
   private ObjectMapper mapper;
 
   /**
@@ -101,38 +104,35 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
 
     sd = mapper.readValue(bodyBuilder.toString(), ServiceDescriptor.class);
 
-    VnfDescriptor vnfd1;
     bodyBuilder = new StringBuilder();
     in = new BufferedReader(new InputStreamReader(
         new FileInputStream(new File("./YAML/emulator-demo-l4fw-socat-vnfd.yml")), Charset.forName("UTF-8")));
     line = null;
     while ((line = in.readLine()) != null)
       bodyBuilder.append(line + "\n\r");
-    vnfd1 = mapper.readValue(bodyBuilder.toString(), VnfDescriptor.class);
+    this.vnfd_socat = mapper.readValue(bodyBuilder.toString(), VnfDescriptor.class);
 
-    VnfDescriptor vnfd2;
     bodyBuilder = new StringBuilder();
     in = new BufferedReader(new InputStreamReader(
         new FileInputStream(new File("./YAML/emulator-demo-proxy-squid-vnfd.yml")), Charset.forName("UTF-8")));
     line = null;
     while ((line = in.readLine()) != null)
       bodyBuilder.append(line + "\n\r");
-    vnfd2 = mapper.readValue(bodyBuilder.toString(), VnfDescriptor.class);
+    this.vnfd_squid = mapper.readValue(bodyBuilder.toString(), VnfDescriptor.class);
 
-    VnfDescriptor vnfd3;
     bodyBuilder = new StringBuilder();
     in = new BufferedReader(new InputStreamReader(
             new FileInputStream(new File("./YAML/emulator-demo-http-apache-vnfd.yml")), Charset.forName("UTF-8")));
     line = null;
     while ((line = in.readLine()) != null)
       bodyBuilder.append(line + "\n\r");
-    vnfd3 = mapper.readValue(bodyBuilder.toString(), VnfDescriptor.class);
+    this.vnfd_apache = mapper.readValue(bodyBuilder.toString(), VnfDescriptor.class);
 
     this.data = new ServiceDeployPayload();
     this.data.setServiceDescriptor(sd);
-    this.data.addVnfDescriptor(vnfd1);
-    this.data.addVnfDescriptor(vnfd2);
-    this.data.addVnfDescriptor(vnfd3);
+    this.data.addVnfDescriptor(this.vnfd_apache);
+    this.data.addVnfDescriptor(this.vnfd_socat);
+    this.data.addVnfDescriptor(this.vnfd_squid);
   }
 
   /**
@@ -340,18 +340,14 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
             + " - message: " + message, status.equals("COMPLETED"));
     System.out.println("Service " + payload.getInstanceId() + " ready for deployment");
 
-
-
-    /*
-
-    // Deploy the two VNFs, one in each PoP
+    // Deploy each of the VNFs
     ArrayList<VnfRecord> records = new ArrayList<VnfRecord>();
 
-    // vTC VNF in PoP#1
+    // deploy apache
     output = null;
 
     FunctionDeployPayload vnfPayload = new FunctionDeployPayload();
-    vnfPayload.setVnfd(vtcVnfd);
+    vnfPayload.setVnfd(this.vnfd_apache);
     vnfPayload.setVimUuid(computeWrUuid1);
     vnfPayload.setServiceInstanceId(data.getNsd().getInstanceUuid());
     body = mapper.writeValueAsString(vnfPayload);
@@ -384,6 +380,9 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     Assert.assertTrue(response.getRequestStatus().equals("COMPLETED"));
     Assert.assertTrue(response.getVnfr().getStatus() == Status.offline);
     records.add(response.getVnfr());
+
+
+    /*
 
     // vFw VNF in PoP#2
     output = null;
