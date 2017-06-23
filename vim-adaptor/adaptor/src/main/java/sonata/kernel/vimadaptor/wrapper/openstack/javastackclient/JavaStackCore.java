@@ -172,7 +172,7 @@ public class JavaStackCore {
     //AUTH_PORT("6001"), HEAT_PORT("9005"), IMAGE_PORT("10243"), COMPUTE_PORT("9775"), HEAT_VERSION(
     //        "v1"), IMAGE_VERSION("v2"), COMPUTE_VERSION(
     //        "v2"), AUTHTOKEN_HEADER("X-AUTH-TOKEN"), AUTH_URI("/v2.0/tokens");
-    AUTH_PORT("6001"), AUTHTOKEN_HEADER("X-AUTH-TOKEN"), AUTH_URI_V2("/v2.0/tokens"), AUTH_URI_V3(
+    AUTH_PORT("9999"), AUTHTOKEN_HEADER("X-AUTH-TOKEN"), AUTH_URI_V2("/v2.0/tokens"), AUTH_URI_V3(
         "/v3/auth/tokens");
 
     private final String constantValue;

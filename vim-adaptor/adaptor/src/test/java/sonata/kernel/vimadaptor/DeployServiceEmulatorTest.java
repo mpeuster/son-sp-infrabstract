@@ -174,10 +174,11 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     System.out.println("[EmulatorTest] Adding PoP 1");
     String addVimBody = "{\"vim_type\":\"Heat\", " + "\"configuration\":{"
             + "\"tenant_ext_router\":\"26f732b2-74bd-4f8c-a60e-dae4fb6a7c14\", "
-            + "\"tenant_ext_net\":\"53d43a3e-8c86-48e6-b1cb-f1f2c48833de\"," + "\"tenant\":\"tenantName\""
+            + "\"tenant_ext_net\":\"53d43a3e-8c86-48e6-b1cb-f1f2c48833de\"," + "\"tenant\":\"tenantName\","
+            + "\"identity_port\":\"6001\""
             + "}," + "\"city\":\"Paderborn\",\"country\":\"Germany\","
             + "\"vim_address\":\"127.0.0.1\",\"username\":\"username\","
-            +"\"name\":\"EmulatorVim1\","
+            + "\"name\":\"EmulatorVim1\","
             + "\"pass\":\"password\"}";
 
     String topic = "infrastructure.management.compute.add";
