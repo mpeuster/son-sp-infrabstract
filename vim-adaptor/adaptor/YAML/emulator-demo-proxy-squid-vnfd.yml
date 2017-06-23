@@ -10,7 +10,7 @@ description: "Squid proxy VNF"
 ##
 virtual_deployment_units:
   - id: "1"
-    vm_image: "sonata-squid"
+    vm_image: "eu.sonata-nfv_squid-vnf_0.1_1"
     vm_image_format: "docker"
     resource_requirements:
       cpu:
