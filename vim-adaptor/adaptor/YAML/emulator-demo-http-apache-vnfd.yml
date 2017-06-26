@@ -39,11 +39,11 @@ virtual_links:
     connection_points_reference:
       - "vdu01:eth0"
       - "mgmt"
-  - id: "input"
+  - id: "data"
     connectivity_type: "E-Line"
     connection_points_reference:
       - "vdu01:eth1"
-      - "vnf:input"
+      - "vnf:data"
 
 ##
 ## The VNF connection points to the 
@@ -53,8 +53,9 @@ connection_points:
   - id: "vnf:mgmt"
     interface: "ipv4"
     type: "management"
-  - id: "vnf:input"
+  - id: "vnf:data"
     interface: "ipv4"
     type: "internal"
+
 uuid: 6a15313f-cb0a-4540-baa2-77cc6b3f5672
 instance_uuid: 6a15313f-cb0a-4540-baa2-77cc6b3f0002

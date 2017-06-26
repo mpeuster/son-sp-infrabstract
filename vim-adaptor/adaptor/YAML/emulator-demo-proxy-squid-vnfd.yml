@@ -24,11 +24,8 @@ virtual_deployment_units:
     connection_points:
       - id: "vdu01:eth0"
         interface: "ipv4"
-        type: "management"
-      - id: "vdu01:eth1"
-        interface: "ipv4"
         type: "internal"
-      - id: "vdu01:eth2"
+      - id: "vdu01:eth1"
         interface: "ipv4"
         type: "internal"
 
@@ -42,16 +39,11 @@ virtual_links:
     connection_points_reference:
       - "vdu01:eth0"
       - "mgmt"
-  - id: "input"
+  - id: "data"
     connectivity_type: "E-Line"
     connection_points_reference:
       - "vdu01:eth1"
-      - "vnf:input"
-  - id: "output"
-    connectivity_type: "E-Line"
-    connection_points_reference:
-      - "vdu01:eth2"
-      - "vnf:output"
+      - "vnf:data"
 
 ##
 ## The VNF connection points to the 
@@ -61,10 +53,7 @@ connection_points:
   - id: "vnf:mgmt"
     interface: "ipv4"
     type: "management"
-  - id: "vnf:input"
-    interface: "ipv4"
-    type: "internal"
-  - id: "vnf:output"
+  - id: "vnf:data"
     interface: "ipv4"
     type: "internal"
 

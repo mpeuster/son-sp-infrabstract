@@ -33,9 +33,6 @@ connection_points:
   - id: "ns:mgmt"
     interface: "ipv4"
     type: "management"
-  - id: "ns:input"
-    interface: "ipv4"
-    type: "external"
 
 ##
 ## The virtual links that interconnect
@@ -49,47 +46,18 @@ virtual_links:
       - "vnf_proxy:mgmt"
       - "vnf_http:mgmt"
       - "ns:mgmt"
-  - id: "input-2-proxy"
+  - id: "data"
     connectivity_type: "E-Line"
     connection_points_reference:
-      - "ns:input"
-      - "vnf_proxy:input"
-  - id: "proxy-2-l4fw"
-    connectivity_type: "E-Line"
-    connection_points_reference:
-      - "vnf_proxy:output"
-      - "vnf_l4fw:input"
-  - id: "l4fw-2-http"
-    connectivity_type: "E-Line"
-    connection_points_reference:
-      - "vnf_l4fw:output"
-      - "vnf_http:input"
+      - "vnf_l4fw:data"
+      - "vnf_http:data"
+      - "vnf_proxy:data"
 
 ##
-## The forwarding graphs.
+## The forwarding graphss.
 ##
 forwarding_graphs:
-  - fg_id: "ns:fg01"
-    number_of_endpoints: 2
-    number_of_virtual_links: 3
-    constituent_vnfs:
-      - "vnf_http"
-    network_forwarding_paths:
-      - fp_id: "ns:fg01:fp01"
-        policy: "none"
-        connection_points:
-          - connection_point_ref: "ns:input"
-            position: 1
-          - connection_point_ref: "vnf_proxy:input"
-            position: 2
-          - connection_point_ref: "vnf_proxy::output"
-            position: 3
-          - connection_point_ref: "vnf_l4fw:input"
-            position: 4
-          - connection_point_ref: "vnf_l4fw:output"
-            position: 5
-          - connection_point_ref: "vnf_http:input"
-            position: 6
+
 uuid: 9df6a98f-9e11-4cb7-b3c0-b1375e7ca1a2
 instance_uuid: 9df6a98f-9e11-4cb7-b3c2-InAdUnitTest
 

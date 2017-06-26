@@ -446,7 +446,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     Assert.assertTrue(response.getVnfr().getStatus() == Status.offline);
     records.add(response.getVnfr());
 
-    
+
 
     /*
 
