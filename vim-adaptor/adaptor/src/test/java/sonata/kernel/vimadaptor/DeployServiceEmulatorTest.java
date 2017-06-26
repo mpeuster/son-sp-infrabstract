@@ -346,19 +346,15 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
 
     // deploy apache
     output = null;
-
     FunctionDeployPayload vnfPayload = new FunctionDeployPayload();
     vnfPayload.setVnfd(this.vnfd_apache);
     vnfPayload.setVimUuid(computeWrUuid1);
     vnfPayload.setServiceInstanceId(data.getNsd().getInstanceUuid());
     body = mapper.writeValueAsString(vnfPayload);
-
     topic = "infrastructure.function.deploy";
     ServicePlatformMessage functionDeployMessage = new ServicePlatformMessage(body,
             "application/x-yaml", topic, UUID.randomUUID().toString(), topic);
-
     consumer.injectMessage(functionDeployMessage);
-
     Thread.sleep(2000);
     while (output == null)
       synchronized (mon) {
@@ -382,6 +378,75 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     Assert.assertTrue(response.getVnfr().getStatus() == Status.offline);
     records.add(response.getVnfr());
 
+    // deploy socat
+    output = null;
+    vnfPayload = new FunctionDeployPayload();
+    vnfPayload.setVnfd(this.vnfd_socat);
+    vnfPayload.setVimUuid(computeWrUuid1);
+    vnfPayload.setServiceInstanceId(data.getNsd().getInstanceUuid());
+    body = mapper.writeValueAsString(vnfPayload);
+
+    topic = "infrastructure.function.deploy";
+    functionDeployMessage = new ServicePlatformMessage(body,
+            "application/x-yaml", topic, UUID.randomUUID().toString(), topic);
+    consumer.injectMessage(functionDeployMessage);
+    Thread.sleep(2000);
+    while (output == null)
+      synchronized (mon) {
+        mon.wait(1000);
+      }
+    Assert.assertNotNull(output);
+    retry = 0;
+    maxRetry = 60;
+    while (output.contains("heartbeat") || output.contains("Vim Added") && retry < maxRetry) {
+      synchronized (mon) {
+        mon.wait(1000);
+        retry++;
+      }
+    }
+    System.out.println("FunctionDeployResponse: ");
+    System.out.println(output);
+    Assert.assertTrue("No response received after function deployment", retry < maxRetry);
+    response = mapper.readValue(output, FunctionDeployResponse.class);
+    Assert.assertTrue(response.getRequestStatus().equals("COMPLETED"));
+    Assert.assertTrue(response.getVnfr().getStatus() == Status.offline);
+    records.add(response.getVnfr());
+
+    // deploy squid
+    output = null;
+    vnfPayload = new FunctionDeployPayload();
+    vnfPayload.setVnfd(this.vnfd_squid);
+    vnfPayload.setVimUuid(computeWrUuid1);
+    vnfPayload.setServiceInstanceId(data.getNsd().getInstanceUuid());
+    body = mapper.writeValueAsString(vnfPayload);
+
+    topic = "infrastructure.function.deploy";
+    functionDeployMessage = new ServicePlatformMessage(body,
+            "application/x-yaml", topic, UUID.randomUUID().toString(), topic);
+    consumer.injectMessage(functionDeployMessage);
+    Thread.sleep(2000);
+    while (output == null)
+      synchronized (mon) {
+        mon.wait(1000);
+      }
+    Assert.assertNotNull(output);
+    retry = 0;
+    maxRetry = 60;
+    while (output.contains("heartbeat") || output.contains("Vim Added") && retry < maxRetry) {
+      synchronized (mon) {
+        mon.wait(1000);
+        retry++;
+      }
+    }
+    System.out.println("FunctionDeployResponse: ");
+    System.out.println(output);
+    Assert.assertTrue("No response received after function deployment", retry < maxRetry);
+    response = mapper.readValue(output, FunctionDeployResponse.class);
+    Assert.assertTrue(response.getRequestStatus().equals("COMPLETED"));
+    Assert.assertTrue(response.getVnfr().getStatus() == Status.offline);
+    records.add(response.getVnfr());
+
+    
 
     /*
 
