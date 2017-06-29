@@ -177,7 +177,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
             + "\"tenant_ext_net\":\"53d43a3e-8c86-48e6-b1cb-f1f2c48833de\"," + "\"tenant\":\"tenantName\","
             + "\"identity_port\":\"6001\""
             + "}," + "\"city\":\"Paderborn\",\"country\":\"Germany\","
-            + "\"vim_address\":\"127.0.0.1\",\"username\":\"username\","
+            + "\"vim_address\":\"172.0.0.101\",\"username\":\"username\","
             + "\"name\":\"EmulatorVim1\","
             + "\"pass\":\"password\"}";
 
