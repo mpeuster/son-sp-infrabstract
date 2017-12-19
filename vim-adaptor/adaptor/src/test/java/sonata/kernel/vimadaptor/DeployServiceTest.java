@@ -28,6 +28,11 @@ package sonata.kernel.vimadaptor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.KeyPair;
+import com.jcraft.jsch.Session;
 
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -47,10 +52,14 @@ import sonata.kernel.vimadaptor.commons.ServiceDeployPayload;
 import sonata.kernel.vimadaptor.commons.ServicePreparePayload;
 import sonata.kernel.vimadaptor.commons.SonataManifestMapper;
 import sonata.kernel.vimadaptor.commons.Status;
+import sonata.kernel.vimadaptor.commons.VduRecord;
 import sonata.kernel.vimadaptor.commons.VimPreDeploymentList;
 import sonata.kernel.vimadaptor.commons.VimResources;
 import sonata.kernel.vimadaptor.commons.VnfImage;
 import sonata.kernel.vimadaptor.commons.VnfRecord;
+import sonata.kernel.vimadaptor.commons.VnfcInstance;
+import sonata.kernel.vimadaptor.commons.nsd.ConnectionPointRecord;
+import sonata.kernel.vimadaptor.commons.nsd.ConnectionPointType;
 import sonata.kernel.vimadaptor.commons.nsd.ServiceDescriptor;
 import sonata.kernel.vimadaptor.commons.vnfd.VnfDescriptor;
 import sonata.kernel.vimadaptor.commons.vnfd.Unit.MemoryUnit;
@@ -59,9 +68,11 @@ import sonata.kernel.vimadaptor.messaging.TestConsumer;
 import sonata.kernel.vimadaptor.messaging.TestProducer;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -69,6 +80,7 @@ import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
 
 
 /**
@@ -92,14 +104,16 @@ public class DeployServiceTest implements MessageReceiver {
   @Before
   public void setUp() throws Exception {
 
-    System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
+    System.setProperty("org.apache.commons.logging.Log",
+        "org.apache.commons.logging.impl.SimpleLog");
 
     System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "false");
 
     System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire.header", "warn");
 
-    System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "warn");   
-    
+    System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient",
+        "warn");
+
     ServiceDescriptor sd;
     StringBuilder bodyBuilder = new StringBuilder();
     BufferedReader in = new BufferedReader(new InputStreamReader(
@@ -112,16 +126,16 @@ public class DeployServiceTest implements MessageReceiver {
     sd = mapper.readValue(bodyBuilder.toString(), ServiceDescriptor.class);
 
     bodyBuilder = new StringBuilder();
-    in = new BufferedReader(new InputStreamReader(
-        new FileInputStream(new File("./YAML/vbar.vnfd")), Charset.forName("UTF-8")));
+    in = new BufferedReader(new InputStreamReader(new FileInputStream(new File("./YAML/vbar.vnfd")),
+        Charset.forName("UTF-8")));
     line = null;
     while ((line = in.readLine()) != null)
       bodyBuilder.append(line + "\n\r");
     vtcVnfd = mapper.readValue(bodyBuilder.toString(), VnfDescriptor.class);
 
     bodyBuilder = new StringBuilder();
-    in = new BufferedReader(new InputStreamReader(
-        new FileInputStream(new File("./YAML/vfoo.vnfd")), Charset.forName("UTF-8")));
+    in = new BufferedReader(new InputStreamReader(new FileInputStream(new File("./YAML/vfoo.vnfd")),
+        Charset.forName("UTF-8")));
     line = null;
     while ((line = in.readLine()) != null)
       bodyBuilder.append(line + "\n\r");
@@ -322,7 +336,7 @@ public class DeployServiceTest implements MessageReceiver {
     Assert.assertTrue(status.equals("ERROR"));
 
 
-    
+
     output = null;
     message = "{\"uuid\":\"" + wrUuid + "\"}";
     topic = "infrastructure.management.compute.remove";
@@ -343,6 +357,7 @@ public class DeployServiceTest implements MessageReceiver {
     core.stop();
 
   }
+
 
   /**
    * This test is de-activated, if you want to use it with your NFVi-PoP, please edit the addVimBody
@@ -455,8 +470,52 @@ public class DeployServiceTest implements MessageReceiver {
 
     output = null;
 
-    // Prepare the system for a service deployment
+    // Generate a ssh keypair for ssh connection test to VMs
+    JSch jsch = new JSch();
+    KeyPair keypair = KeyPair.genKeyPair(jsch, KeyPair.RSA);
 
+    System.out.println("RSA Keypair toString:\n" + keypair.toString());
+    System.out.println("RSA Keypair fingerprint:\n" + keypair.getFingerPrint());
+
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    keypair.writePublicKey(baos, "");
+    String pubKeyString = baos.toString(Charsets.UTF_8.displayName()).replace("\n", "");
+
+    baos = new ByteArrayOutputStream();
+    keypair.writePrivateKey(baos);
+    String privKeyString = baos.toString(Charsets.UTF_8.displayName());
+
+    // Use PEM format for serialising keys
+    // KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+    // generator.initialize(1024);
+    //
+    // java.security.KeyPair keyPair = generator.generateKeyPair();
+    // RSAPrivateKey priv = (RSAPrivateKey) keyPair.getPrivate();
+    // RSAPublicKey pub = (RSAPublicKey) keyPair.getPublic();
+    //
+    // PemObject pemPubKey = new PemObject("RSA PUBLIC KEY", pub.getEncoded());
+    // PemObject pemPrivKey = new PemObject("RSA PRIVATE KEY", priv.getEncoded());
+    //
+    //
+    // StringWriter strwr = new StringWriter();
+    // PemWriter wr = new PemWriter(strwr);
+    // wr.writeObject(pemPubKey);
+    // wr.flush();
+    // strwr.flush();
+    // pubKeyString = strwr.getBuffer().toString();
+    //
+    // strwr = new StringWriter();
+    // wr = new PemWriter(strwr);
+    // wr.writeObject(pemPrivKey);
+    // wr.flush();
+    // strwr.flush();
+    // privKeyString = strwr.getBuffer().toString();
+
+    System.out.println(pubKeyString);
+    System.out.println(privKeyString);
+
+
+    // Service prepare call
     ServicePreparePayload payload = new ServicePreparePayload();
 
     payload.setInstanceId(nsdPayload.getNsd().getInstanceUuid());
@@ -465,10 +524,15 @@ public class DeployServiceTest implements MessageReceiver {
     vimDepList.setUuid(computeWrUuid);
     ArrayList<VnfImage> vnfImages = new ArrayList<VnfImage>();
     VnfImage vtcImgade = new VnfImage("eu.sonata-nfv_vbar-vnf_0.1_vdu01",
-        "http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img");
+        // "http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img");
+        // "https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img");
+        "https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2");
     vnfImages.add(vtcImgade);
     VnfImage vfwImgade = new VnfImage("eu.sonata-nfv_vfoo-vnf_0.1_1",
-        "http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img","f8ab98ff5e73ebab884d80c9dc9c7290");
+        // "http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img",
+        // "f8ab98ff5e73ebab884d80c9dc9c7290");
+        "https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img",
+        "c3e0b581d613a4806e6e5fd823d93f01");
     vnfImages.add(vfwImgade);
     vimDepList.setImages(vnfImages);
     vims.add(vimDepList);
@@ -507,6 +571,8 @@ public class DeployServiceTest implements MessageReceiver {
       FunctionDeployPayload vnfPayload = new FunctionDeployPayload();
       vnfPayload.setVnfd(vnfd);
       vnfPayload.setVimUuid(computeWrUuid);
+      vnfPayload.setPublicKey(null);
+      vnfPayload.setPublicKey(pubKeyString);
       vnfPayload.setServiceInstanceId(nsdPayload.getNsd().getInstanceUuid());
       body = mapper.writeValueAsString(vnfPayload);
 
@@ -538,6 +604,73 @@ public class DeployServiceTest implements MessageReceiver {
       Assert.assertTrue(response.getRequestStatus().equals("COMPLETED"));
       Assert.assertTrue(response.getVnfr().getStatus() == Status.offline);
       records.add(response.getVnfr());
+
+      // Test SSH connection
+      for (VduRecord vdu : response.getVnfr().getVirtualDeploymentUnits()) {
+        for (VnfcInstance vnfc : vdu.getVnfcInstance()) {
+          String host = "";
+          for (ConnectionPointRecord cpr : vnfc.getConnectionPoints()) {
+            if (cpr.getType() == ConnectionPointType.MANAGEMENT) {
+              host = cpr.getInterface().getAddress();
+            }
+          }
+          Assert.assertNotNull("Can't find management address of VNFC: "
+              + response.getVnfr().getId() + "." + vdu.getId() + "." + vnfc.getId(), host);
+          System.out.println("Trying to ssh connect into the public IP of the VNF");
+
+          String user = "sonatamano";
+          int port = 22;
+          keypair.writePrivateKey("/tmp/privkey");
+          jsch.addIdentity("/tmp/privkey");
+
+          System.out.println("Connecting to host: " + host);
+          Session session = jsch.getSession(user, host, port);
+          System.out.println("session created.");
+
+          java.util.Properties config = new java.util.Properties();
+          config.put("StrictHostKeyChecking", "no");
+          session.setConfig(config);
+
+          session.connect();
+          System.out.println("session connected.....");
+
+          String commandToRun = "cat /etc/sonata_sp_address.conf 2>&1 \n";
+          ChannelExec channelExec = (ChannelExec) session.openChannel("exec");
+
+          InputStream in = channelExec.getInputStream();
+
+          channelExec.setCommand(commandToRun);
+          channelExec.connect();
+
+          BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+          String line;
+          int index = 0;
+          String fileContent = "";
+          while ((line = reader.readLine()) != null) {
+            fileContent+=line;
+            System.out.println(++index + " : " + line);
+          }
+
+          int exitStatus = channelExec.getExitStatus();
+          channelExec.disconnect();
+          session.disconnect();
+          if (exitStatus < 0) {
+            System.out.println("Done, but exit status not set!");
+          } else if (exitStatus > 0) {
+            System.out.println("Done, but with error!");
+          } else {
+            System.out.println("Done!");
+          }
+
+          System.out.println("FileContent: " + fileContent);
+
+          Assert.assertTrue(fileContent.startsWith("SP_ADDRESS="));
+
+          session.disconnect();
+          System.out.println("session disconnected");
+        }
+      }
+
     }
 
     // Finally configure Networking in each NFVi-PoP (VIMs)
@@ -553,17 +686,17 @@ public class DeployServiceTest implements MessageReceiver {
     in2.setLocation("Athens");
     in1.setNap("10.100.32.40/32");
     in2.setNap("10.100.0.40/32");
-    
+
     out1.setLocation("Athens");
     out2.setLocation("Athens");
     out1.setNap("10.100.32.40/32");
     out2.setNap("10.100.0.40/32");
-    NapObject[] ingresses = {in1,in2};
-    NapObject[] egresses = {out1,out2};
+    NapObject[] ingresses = {in1, in2};
+    NapObject[] egresses = {out1, out2};
     nap.setEgresses(new ArrayList<NapObject>(Arrays.asList(egresses)));
     nap.setIngresses(new ArrayList<NapObject>(Arrays.asList(ingresses)));
 
-    
+
     NetworkConfigurePayload netPayload = new NetworkConfigurePayload();
     netPayload.setNsd(nsdPayload.getNsd());
     netPayload.setVnfds(nsdPayload.getVnfdList());
@@ -625,7 +758,7 @@ public class DeployServiceTest implements MessageReceiver {
 
     output = null;
 
-    
+
     netPayload = new NetworkConfigurePayload();
     netPayload.setNsd(nsdPayload.getNsd());
     netPayload.setVnfds(nsdPayload.getVnfdList());
@@ -637,8 +770,8 @@ public class DeployServiceTest implements MessageReceiver {
     body = mapper.writeValueAsString(netPayload);
 
     topic = "infrastructure.service.chain.configure";
-    networkConfigureMessage = new ServicePlatformMessage(body,
-        "application/x-yaml", topic, UUID.randomUUID().toString(), topic);
+    networkConfigureMessage = new ServicePlatformMessage(body, "application/x-yaml", topic,
+        UUID.randomUUID().toString(), topic);
 
     consumer.injectMessage(networkConfigureMessage);
 
@@ -657,14 +790,14 @@ public class DeployServiceTest implements MessageReceiver {
         status.equals("COMPLETED"));
     System.out.println(
         "Service " + payload.getInstanceId() + " deployed and configured in selected VIM(s)");
-    
+
     // Clean everything again:
     // 1. De-configure SFC
     output = null;
     message = "{\"service_instance_id\":\"" + nsdPayload.getNsd().getInstanceUuid() + "\"}";
     topic = "infrastructure.service.chain.deconfigure";
-    deconfigureNetworkMessage = new ServicePlatformMessage(message,
-        "application/json", topic, UUID.randomUUID().toString(), topic);
+    deconfigureNetworkMessage = new ServicePlatformMessage(message, "application/json", topic,
+        UUID.randomUUID().toString(), topic);
     consumer.injectMessage(deconfigureNetworkMessage);
     try {
       while (output == null) {
@@ -683,7 +816,7 @@ public class DeployServiceTest implements MessageReceiver {
     Assert.assertTrue("Adapter returned an unexpected status: " + status,
         status.equals("COMPLETED"));
 
-    
+
     // 2. Remove Service
     // Service removal
     output = null;
@@ -1264,6 +1397,7 @@ public class DeployServiceTest implements MessageReceiver {
 
     // System.out.println(mapper.writeValueAsString(payload));
   }
+
 
   public void receiveHeartbeat(ServicePlatformMessage message) {
     synchronized (mon) {

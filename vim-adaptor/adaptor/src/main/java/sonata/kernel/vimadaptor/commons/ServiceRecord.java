@@ -28,6 +28,8 @@ package sonata.kernel.vimadaptor.commons;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.ArrayList;
+
 public class ServiceRecord {
 
   @JsonProperty("descriptor_reference")
@@ -37,6 +39,8 @@ public class ServiceRecord {
   @JsonProperty("id")
   private String id;
   private Status status;
+  @JsonProperty("network_functions")
+  ArrayList<NetworkFunctionInstanceReference> networkFunctions;
 
 
 
@@ -75,6 +79,16 @@ public class ServiceRecord {
 
   public void setStatus(Status status) {
     this.status = status;
+  }
+
+
+  public ArrayList<NetworkFunctionInstanceReference> getNetworkFunctions() {
+    return networkFunctions;
+  }
+
+
+  public void setNetworkFunctions(ArrayList<NetworkFunctionInstanceReference> networkFunctions) {
+    this.networkFunctions = networkFunctions;
   }
 
 

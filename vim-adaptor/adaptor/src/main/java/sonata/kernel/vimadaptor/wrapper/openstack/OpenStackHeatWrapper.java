@@ -38,6 +38,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.slf4j.LoggerFactory;
 
+import sonata.kernel.vimadaptor.AdaptorCore;
 import sonata.kernel.vimadaptor.commons.FunctionDeployPayload;
 import sonata.kernel.vimadaptor.commons.FunctionDeployResponse;
 import sonata.kernel.vimadaptor.commons.FunctionScalePayload;
@@ -74,7 +75,12 @@ import sonata.kernel.vimadaptor.wrapper.openstack.heat.HeatTemplate;
 import sonata.kernel.vimadaptor.wrapper.openstack.heat.StackComposition;
 import sonata.kernel.vimadaptor.wrapper.openstack.javastackclient.models.Image.Image;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -86,13 +92,13 @@ import java.util.Hashtable;
 
 public class OpenStackHeatWrapper extends ComputeWrapper {
 
-  private static final String mistralConfigFilePath = "/etc/son-mano/mistral.config";
-
   private static final org.slf4j.Logger Logger =
       LoggerFactory.getLogger(OpenStackHeatWrapper.class);
-  private IpNetPool myPool;
 
+  private static final String mistralConfigFilePath = "/etc/son-mano/mistral.config";
   private String mistralUrl;
+
+  private IpNetPool myPool;
 
   /**
    * Standard constructor for an Compute Wrapper of an OpenStack VIM using Heat.
@@ -105,7 +111,7 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
     Logger.debug("Wrapper specific configuration: " + configuration);
     JSONTokener tokener = new JSONTokener(configuration);
     JSONObject object = (JSONObject) tokener.nextValue();
-    String tenant = object.getString("tenant");
+    // String tenant = object.getString("tenant");
     String tenantCidr = null;
     if (object.has("tenant_private_net_id")) {
       String tenantNetId = object.getString("tenant_private_net_id");
@@ -162,6 +168,7 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
         .getServiceInstanceVimUuid(data.getServiceInstanceId(), this.getConfig().getUuid());
     String stackName = WrapperBay.getInstance().getVimRepo()
         .getServiceInstanceVimName(data.getServiceInstanceId(), this.getConfig().getUuid());
+    
     ArrayList<Flavor> vimFlavors = novaClient.getFlavors();
     Collections.sort(vimFlavors);
     HeatModel stackAddition;
@@ -173,7 +180,8 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
     mapper.setSerializationInclusion(Include.NON_NULL);
 
     try {
-      stackAddition = translate(data.getVnfd(), vimFlavors, data.getServiceInstanceId());
+      stackAddition =
+          translate(data.getVnfd(), vimFlavors, data.getServiceInstanceId(), data.getPublicKey());
     } catch (Exception e) {
       Logger.error("Error: " + e.getMessage());
       e.printStackTrace();
@@ -222,7 +230,8 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
     }
     int counter = 0;
     int wait = 1000;
-    int maxCounter = 10;
+    int maxCounter = 50;
+    int maxWait = 15000;
     String status = null;
     while ((status == null || !status.equals("UPDATE_COMPLETE") || !status.equals("UPDATE_FAILED"))
         && counter < maxCounter) {
@@ -237,7 +246,7 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
         Logger.error(e.getMessage(), e);
       }
       counter++;
-      wait *= 2;
+      wait = Math.min(wait * 2, maxWait);
 
     }
 
@@ -270,7 +279,7 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
         Logger.error(e.getMessage(), e);
       }
       counter++;
-      wait *= 2;
+      wait = Math.min(wait * 2, maxWait);
     }
 
     if (composition == null) {
@@ -568,28 +577,6 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
     return out;
   }
 
-  private boolean searchImageByName(String imageName, ArrayList<Image> glanceImages) {
-    Logger.debug("Image lookup based on image name...");
-    for (Image glanceImage : glanceImages) {
-      Logger.debug("Checking " + glanceImage.getName());
-      if (glanceImage.getName().equals(imageName)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private boolean searchImageByChecksum(String imageChecksum, ArrayList<Image> glanceImages) {
-    Logger.debug("Image lookup based on image checksum...");
-    for (Image glanceImage : glanceImages) {
-      Logger.debug("Checking " + glanceImage.getName());
-      if (glanceImage.getChecksum().equals(imageChecksum)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   /*
    * (non-Javadoc)
    * 
@@ -634,7 +621,8 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
       }
       int counter = 0;
       int wait = 1000;
-      int maxCounter = 10;
+      int maxWait = 15000;
+      int maxCounter = 50;
       String status = null;
       while ((status == null || !status.equals("CREATE_COMPLETE")
           || !status.equals("CREATE_FAILED")) && counter < maxCounter) {
@@ -650,7 +638,7 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
           Logger.error(e.getMessage(), e);
         }
         counter++;
-        wait *= 2;
+        wait = Math.min(wait * 2, maxWait);
       }
 
       if (status == null) {
@@ -910,7 +898,7 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
     extRouterInterface.putProperty("subnet", extSubnetMapInt);
     extRouterInterface.putProperty("router", tenantExtRouter);
     model.addResource(extRouterInterface);
-    
+
     // Create the internal net and subnet
     HeatResource internalNetwork = new HeatResource();
     internalNetwork.setType("OS::Neutron::Net");
@@ -931,7 +919,7 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
     internalNetMap.put("get_resource", "SonataService.internal.net." + instanceId);
     internalSubnet.putProperty("network", internalNetMap);
     model.addResource(internalSubnet);
-    
+
     // Create the input net and subnet
     HeatResource inputNetwork = new HeatResource();
     inputNetwork.setType("OS::Neutron::Net");
@@ -952,6 +940,16 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
     inputNetMap.put("get_resource", "SonataService.input.net." + instanceId);
     inputSubnet.putProperty("network", inputNetMap);
     model.addResource(inputSubnet);
+    
+    // Internal input network router interface
+    HeatResource inputRouterInterface = new HeatResource();
+    inputRouterInterface.setType("OS::Neutron::RouterInterface");
+    inputRouterInterface.setName("SonataService.input.internal." + instanceId);
+    HashMap<String, Object> inputSubnetMapInt = new HashMap<String, Object>();
+    inputSubnetMapInt.put("get_resource", "SonataService.input.subnet." + instanceId);
+    inputRouterInterface.putProperty("subnet", inputSubnetMapInt);
+    inputRouterInterface.putProperty("router", tenantExtRouter);
+    model.addResource(inputRouterInterface);
 
     // Create the output net and subnet
     HeatResource outputNetwork = new HeatResource();
@@ -974,6 +972,16 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
     outputSubnet.putProperty("network", outputNetMap);
     model.addResource(outputSubnet);
 
+    // Internal output network router interface
+    HeatResource outputRouterInterface = new HeatResource();
+    outputRouterInterface.setType("OS::Neutron::RouterInterface");
+    outputRouterInterface.setName("SonataService.output.internal." + instanceId);
+    HashMap<String, Object> outputSubnetMapInt = new HashMap<String, Object>();
+    outputSubnetMapInt.put("get_resource", "SonataService.output.subnet." + instanceId);
+    outputRouterInterface.putProperty("subnet", outputSubnetMapInt);
+    outputRouterInterface.putProperty("router", tenantExtRouter);
+    model.addResource(outputRouterInterface);
+    
     model.prepare();
 
     HeatTemplate template = new HeatTemplate();
@@ -984,6 +992,52 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
     return template;
   }
 
+  /**
+   * @param vmImageMd5 the checksum of the image to search;
+   * @throws IOException if the VIM cannot be contacted to retrieve the list of available images;
+   */
+  private String getImageNameByImageChecksum(String vmImageMd5) throws IOException {
+    String imageName = null;
+    Logger.debug("Searching Image Checksum: " + vmImageMd5);
+    JSONTokener tokener = new JSONTokener(getConfig().getConfiguration());
+    JSONObject object = (JSONObject) tokener.nextValue();
+    String tenant = object.getString("tenant");
+    String identityPort = null;
+    if (object.has("identity_port")) {
+      identityPort = object.getString("identity_port");
+    }
+    OpenStackGlanceClient glance = null;
+    glance = new OpenStackGlanceClient(getConfig().getVimEndpoint().toString(),
+        getConfig().getAuthUserName(), getConfig().getAuthPass(), tenant, identityPort);
+    ArrayList<Image> glanceImages = glance.listImages();
+    for (Image image : glanceImages) {
+      if (image != null && image.getChecksum() != null
+          && (image.getChecksum().equals(vmImageMd5))) {
+        imageName = image.getName();
+        break;
+      }
+    }
+    return imageName;
+  }
+
+  private String getMistralUrl() {
+
+    String mistralUrl = null;
+    try {
+      InputStreamReader in = new InputStreamReader(new FileInputStream(mistralConfigFilePath),
+          Charset.forName("UTF-8"));
+      JSONTokener tokener = new JSONTokener(in);
+      JSONObject jsonObject = (JSONObject) tokener.nextValue();
+      mistralUrl = jsonObject.getString("mistral_server_address");
+    } catch (FileNotFoundException e) {
+      Logger.error("Unable to load Mistral Config file", e);
+      System.exit(1);
+    }
+
+    return mistralUrl;
+
+  }
+
 
   private String getTenant() {
     JSONTokener tokener = new JSONTokener(getConfig().getConfiguration());
@@ -992,6 +1046,31 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
   }
 
 
+
+  private boolean searchImageByChecksum(String imageChecksum, ArrayList<Image> glanceImages) {
+    Logger.debug("Image lookup based on image checksum...");
+    for (Image glanceImage : glanceImages) {
+      if (glanceImage.getName() == null) continue;
+      Logger.debug("Checking " + glanceImage.getName());
+      if (glanceImage.getChecksum() == null) continue;
+      if (glanceImage.getChecksum().equals(imageChecksum)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean searchImageByName(String imageName, ArrayList<Image> glanceImages) {
+    Logger.debug("Image lookup based on image name...");
+    for (Image glanceImage : glanceImages) {
+      if (glanceImage.getName() == null) continue;
+      Logger.debug("Checking " + glanceImage.getName());
+      if (glanceImage.getName().equals(imageName)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   private String selectFlavor(int vcpu, double memoryInGB, double storageIngGB,
       ArrayList<Flavor> vimFlavors) {
@@ -1314,8 +1393,8 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
     return model;
   }
 
-  private HeatModel translate(VnfDescriptor vnfd, ArrayList<Flavor> flavors, String instanceUuid)
-      throws Exception {
+  private HeatModel translate(VnfDescriptor vnfd, ArrayList<Flavor> flavors, String instanceUuid,
+      String publicKey) throws Exception {
     // TODO This values should be per User, now they are per VIM. This should be re-desinged once
     // user management is in place.
     JSONTokener tokener = new JSONTokener(getConfig().getConfiguration());
@@ -1327,6 +1406,64 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
     HeatModel model = new HeatModel();
     ArrayList<String> publicPortNames = new ArrayList<String>();
 
+    addSpAddressCloudConfigObject(vnfd, instanceUuid, model);
+
+    boolean hasPubKey = (publicKey != null);
+    if (hasPubKey) {
+      HeatResource keypair = new HeatResource();
+      keypair.setType("OS::Nova::KeyPair");
+      keypair.setName(vnfd.getName() + "_" + instanceUuid + "_keypair");
+      keypair.putProperty("name", vnfd.getName() + "_" + instanceUuid + "_keypair");
+      keypair.putProperty("save_private_key", "false");
+      keypair.putProperty("public_key", publicKey);
+      model.addResource(keypair);
+
+      HashMap<String, Object> userMap = new HashMap<String, Object>();
+      userMap.put("name", "sonatamano");
+      userMap.put("gecos", "SONATA MANO admin user");
+      String[] userGroups = {"adm", "audio", "cdrom", "dialout", "dip", "floppy", "netdev",
+          "plugdev", "sudo", "video"};
+      userMap.put("groups", userGroups);
+      userMap.put("shell", "/bin/bash");
+      String[] keys = {publicKey};
+      userMap.put("ssh-authorized-keys", keys);
+      userMap.put("home", "/home/sonatamano");
+      Object[] usersList = {"default", userMap};
+
+      HashMap<String, Object> keyCloudConfigMap = new HashMap<String, Object>();
+      keyCloudConfigMap.put("users", usersList);
+
+      HeatResource keycloudConfigObject = new HeatResource();
+      keycloudConfigObject.setType("OS::Heat::CloudConfig");
+      keycloudConfigObject.setName(vnfd.getName() + "_" + instanceUuid + "_keyCloudConfig");
+      keycloudConfigObject.putProperty("cloud_config", keyCloudConfigMap);
+      model.addResource(keycloudConfigObject);
+    
+      HashMap<String, Object> keyInitMap = new HashMap<String, Object>();
+      keyInitMap.put("get_resource", vnfd.getName() + "_" + instanceUuid + "_keyCloudConfig");
+      
+      HashMap<String,Object> partMap1 = new HashMap<String, Object>();
+      partMap1.put("config", keyInitMap);
+
+      
+      HashMap<String, Object> spAddressInitMap = new HashMap<String, Object>();
+      spAddressInitMap.put("get_resource", vnfd.getName() + "_" + instanceUuid + "_spAddressCloudConfig");
+
+      HashMap<String,Object> partMap2 = new HashMap<String, Object>();
+      partMap2.put("config", spAddressInitMap);
+
+      ArrayList<HashMap<String,Object>> configList = new ArrayList<HashMap<String, Object>>();
+      
+      configList.add(partMap1);
+      configList.add(partMap2);      
+      
+      HeatResource serverInitObject = new HeatResource();
+      serverInitObject.setType("OS::Heat::MultipartMime");
+      serverInitObject.setName(vnfd.getName() + "_" + instanceUuid + "_serverInit");
+      serverInitObject.putProperty("parts", configList);
+      model.addResource(serverInitObject);
+    }    
+    
     for (VirtualDeploymentUnit vdu : vnfd.getVirtualDeploymentUnits()) {
       Logger.debug("Each VDU goes into a resource group with a number of Heat Server...");
       HeatResource resourceGroup = new HeatResource();
@@ -1338,12 +1475,33 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
       if (vdu.getVmImageMd5() != null) {
         imageName = getImageNameByImageChecksum(vdu.getVmImageMd5());
       }
+      
+      Logger.debug("image selected:" + imageName);
       HeatResource server = new HeatResource();
       server.setType("OS::Nova::Server");
       server.setName(null);
       server.putProperty("name",
-          vnfd.getName() + "." + vdu.getId() + "." + instanceUuid + ".%index%");
+          vnfd.getName() + "." + vdu.getId() + "." + instanceUuid + ".instance%index%");
       server.putProperty("image", imageName);
+
+      if (hasPubKey) {
+        // Put the MultiPartMime
+        HashMap<String, Object> keyMap = new HashMap<String, Object>();
+        keyMap.put("get_resource", vnfd.getName() + "_" + instanceUuid + "_keypair");
+        server.putProperty("key_name", keyMap);
+        
+        HashMap<String, Object> userDataMap = new HashMap<String, Object>();
+        userDataMap.put("get_resource", vnfd.getName() + "_" + instanceUuid + "_serverInit");
+        server.putProperty("user_data", userDataMap);
+        server.putProperty("user_data_format", "RAW");
+      } else{
+        // Put just the spAddressCloudConfig
+        HashMap<String, Object> userDataMap = new HashMap<String, Object>();
+        userDataMap.put("get_resource", vnfd.getName() + "_" + instanceUuid + "_spAddressCloudConfig");
+        server.putProperty("user_data", userDataMap);
+        server.putProperty("user_data_format", "RAW");
+      }
+
       int vcpu = vdu.getResourceRequirements().getCpu().getVcpus();
       double memoryInGB = vdu.getResourceRequirements().getMemory().getSize()
           * vdu.getResourceRequirements().getMemory().getSizeUnit().getMultiplier();
@@ -1441,49 +1599,27 @@ public class OpenStackHeatWrapper extends ComputeWrapper {
     return model;
   }
 
-  /**
-   * @param vmImageMd5 the checksum of the image to search;
-   * @throws IOException if the VIM cannot be contacted to retrieve the list of available images;
-   */
-  private String getImageNameByImageChecksum(String vmImageMd5) throws IOException {
-    String imageName = null;
-    Logger.debug("Searching Image Checksum: " + vmImageMd5);
-    JSONTokener tokener = new JSONTokener(getConfig().getConfiguration());
-    JSONObject object = (JSONObject) tokener.nextValue();
-    String tenant = object.getString("tenant");
-    String identityPort = null;
-    if (object.has("identity_port")) {
-      identityPort = object.getString("identity_port");
-    }
-    OpenStackGlanceClient glance = null;
-    glance = new OpenStackGlanceClient(getConfig().getVimEndpoint().toString(),
-        getConfig().getAuthUserName(), getConfig().getAuthPass(), tenant, identityPort);
-    ArrayList<Image> glanceImages = glance.listImages();
-    for (Image image : glanceImages) {
-      if (image.getChecksum().equals(vmImageMd5)) {
-        imageName = image.getName();
-        break;
-      }
-    }
-    return imageName;
-  }
+  private void addSpAddressCloudConfigObject(VnfDescriptor vnfd, String instanceUuid,
+      HeatModel model) {
+    
+    
+    String sonataSpAddress = (String)AdaptorCore.getInstance().getSystemParameter("sonata_sp_address");
+        
+    HashMap<String, Object> fileToWrite = new HashMap<String,Object>();
+    fileToWrite.put("path", "/etc/sonata_sp_address.conf");
+    fileToWrite.put("content", "SP_ADDRESS="+sonataSpAddress+"\n");
 
-  private String getMistralUrl() {
-
-    String mistralUrl = null;
-    try {
-      InputStreamReader in = new InputStreamReader(new FileInputStream(mistralConfigFilePath),
-          Charset.forName("UTF-8"));
-      JSONTokener tokener = new JSONTokener(in);
-      JSONObject jsonObject = (JSONObject) tokener.nextValue();
-      mistralUrl = jsonObject.getString("mistral_server_address");
-    } catch (FileNotFoundException e) {
-      Logger.error("Unable to load Mistral Config file", e);
-      System.exit(1);
-    }
-
-    return mistralUrl;
-
+    ArrayList<HashMap<String, Object>> filesToWrite = new ArrayList<HashMap<String, Object>>();
+    filesToWrite.add(fileToWrite);
+    
+    HashMap<String, Object> spAddressCloudConfigMap = new HashMap<String, Object>();
+    spAddressCloudConfigMap.put("write_files", filesToWrite);
+    
+    HeatResource spAddressCloudConfigObject = new HeatResource();
+    spAddressCloudConfigObject.setType("OS::Heat::CloudConfig");
+    spAddressCloudConfigObject.setName(vnfd.getName() + "_" + instanceUuid + "_spAddressCloudConfig");
+    spAddressCloudConfigObject.putProperty("cloud_config", spAddressCloudConfigMap);
+    model.addResource(spAddressCloudConfigObject);
   }
 
 }

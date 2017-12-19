@@ -86,11 +86,6 @@ public class OvsWrapper extends NetworkWrapper {
 
     long start = System.currentTimeMillis();
 
-    // TODO the NSD specifies more than one graph, and the selected one is given in the flavor
-    // section.
-    // This is not implemented in the first version.
-
-
     String serviceInstanceId = data.getServiceInstanceId();
     ServiceDescriptor nsd = data.getNsd();
     ArrayList<VnfRecord> vnfrs = data.getVnfrs();
@@ -162,7 +157,7 @@ public class OvsWrapper extends NetworkWrapper {
             Logger.info(link.getConnectionPointsReference().toString());
           }
           throw new Exception(
-              "Illegal Format: unable to find the vnfd.VL connected to the VNFD.CP=" + cpRef);
+              "Illegal Format: unable to find the vnfd.VL connected to the VNFD.CP=" + vnfId+":"+cpRef);
         }
 
         if (inputLink.getConnectionPointsReference().size() != 2) {
@@ -233,7 +228,13 @@ public class OvsWrapper extends NetworkWrapper {
       }
     }
 
-    if (data.getNap() == null) {
+    boolean nullNapCondition = data.getNap() == null
+        || (data.getNap() != null
+            && (data.getNap().getEgresses() == null || data.getNap().getIngresses() == null))
+        || (data.getNap() != null && data.getNap().getEgresses() != null
+            && data.getNap().getIngresses() != null && (data.getNap().getIngresses().size() == 0
+                || data.getNap().getEgresses().size() == 0));
+    if (nullNapCondition) {
       Logger.warn("NAP not specified, using default ones from default config file");
       Properties segments = new Properties();
       segments.load(new FileReader(new File(ADAPTOR_SEGMENTS_CONF)));
@@ -350,7 +351,7 @@ public class OvsWrapper extends NetworkWrapper {
     clientSocket.close();
 
     Logger.info("SFC Agent response:\n" + response);
-    if (!response.equals("SUCCESS")) {
+    if (!(response.equals("SUCCESS")||response.startsWith("No instance-ID"))) {
       Logger.error("Unexpected response.");
       Logger.error("received string length: " + response.length());
       Logger.error("received string: " + response);
