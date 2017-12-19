@@ -53,10 +53,8 @@ import sonata.kernel.vimadaptor.wrapper.openstack.javastackclient.models.authent
 import sonata.kernel.vimadaptor.wrapper.openstack.javastackclient.models.authenticationv3.CatalogItem;
 import sonata.kernel.vimadaptor.wrapper.openstack.javastackclient.models.authenticationv3.EndpointItem;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -65,109 +63,9 @@ import java.util.HashMap;
 
 public class JavaStackCore {
 
-  private static final org.slf4j.Logger Logger = LoggerFactory.getLogger(JavaStackCore.class);
-  private String endpoint;
-  private String username;
-  private String password;
-  private String projectId;
-  private String projectName;
-  private ObjectMapper mapper;
-  private String token_id;
-  // private String image_id;
-  private boolean isAuthenticated = false;
-
-  private JavaStackCore() {}
-
-
-  private static class Identity {
-    static String PORT;
-    static String VERSION;
-
-    public static String getPORT() {
-      return PORT;
-    }
-
-    public static void setPORT(String PORT) {
-      Identity.PORT = PORT;
-    }
-
-    public static String getVERSION() {
-      return VERSION;
-    }
-
-    public static void setVERSION(String VERSION) {
-      Identity.VERSION = VERSION;
-    }
-  }
-
-  private static class Compute {
-    static String PORT;
-    static String VERSION;
-
-    public static String getPORT() {
-      return PORT;
-    }
-
-    public static void setPORT(String PORT) {
-      Compute.PORT = PORT;
-    }
-
-    public static String getVERSION() {
-      return VERSION;
-    }
-
-    public static void setVERSION(String VERSION) {
-      Compute.VERSION = VERSION;
-    }
-  }
-
-  private static class Image {
-    static String PORT;
-    static String VERSION;
-
-    public static String getPORT() {
-      return PORT;
-    }
-
-    public static void setPORT(String PORT) {
-      Image.PORT = PORT;
-    }
-
-    public static String getVERSION() {
-      return VERSION;
-    }
-
-    public static void setVERSION(String VERSION) {
-      Image.VERSION = VERSION;
-    }
-  }
-
-  private static class Orchestration {
-    static String PORT;
-    static String VERSION;
-
-    public static String getPORT() {
-      return PORT;
-    }
-
-    public static void setPORT(String PORT) {
-      Orchestration.PORT = PORT;
-    }
-
-    public static String getVERSION() {
-      return VERSION;
-    }
-
-    public static void setVERSION(String VERSION) {
-      Orchestration.VERSION = VERSION;
-    }
-  }
-
-
-
   public enum Constants {
-    AUTH_PORT("5000"), AUTHTOKEN_HEADER("X-AUTH-TOKEN"), AUTH_URI_V2("/v2.0/tokens"), AUTH_URI_V3(
-        "/v3/auth/tokens");
+    AUTH_PORT("5000"), AUTH_URI_V2("/v2.0/tokens"), AUTH_URI_V3(
+        "/v3/auth/tokens"), AUTHTOKEN_HEADER("X-AUTH-TOKEN");
 
     private final String constantValue;
 
@@ -180,41 +78,168 @@ public class JavaStackCore {
       return this.constantValue;
     }
   }
+  private static class Compute {
+    static String PORT;
+    static String VERSION;
 
-  private static class SingeltonJavaStackCoreHelper {
-    private static final JavaStackCore _javaStackCore = new JavaStackCore();
+    public static String getPORT() {
+      return PORT;
+    }
+
+    public static String getVERSION() {
+      return VERSION;
+    }
+
+    public static void setPORT(String PORT) {
+      Compute.PORT = PORT;
+    }
+
+    public static void setVERSION(String VERSION) {
+      Compute.VERSION = VERSION;
+    }
   }
+  private static class Identity {
+    static String PORT;
+    static String VERSION;
+
+    public static String getPORT() {
+      return PORT;
+    }
+
+    public static String getVERSION() {
+      return VERSION;
+    }
+
+    public static void setPORT(String PORT) {
+      Identity.PORT = PORT;
+    }
+
+    public static void setVERSION(String VERSION) {
+      Identity.VERSION = VERSION;
+    }
+  }
+  private static class Image {
+    static String PORT;
+    static String VERSION;
+
+    public static String getPORT() {
+      return PORT;
+    }
+
+    public static String getVERSION() {
+      return VERSION;
+    }
+
+    public static void setPORT(String PORT) {
+      Image.PORT = PORT;
+    }
+
+    public static void setVERSION(String VERSION) {
+      Image.VERSION = VERSION;
+    }
+  }
+  private static class Orchestration {
+    static String PORT;
+    static String VERSION;
+
+    public static String getPORT() {
+      return PORT;
+    }
+
+    public static String getVERSION() {
+      return VERSION;
+    }
+
+    public static void setPORT(String PORT) {
+      Orchestration.PORT = PORT;
+    }
+
+    public static void setVERSION(String VERSION) {
+      Orchestration.VERSION = VERSION;
+    }
+  }
+
+  // private static class SingeltonJavaStackCoreHelper {
+  // private static final JavaStackCore _javaStackCore = new JavaStackCore();
+  // }
+
+  private static final org.slf4j.Logger Logger = LoggerFactory.getLogger(JavaStackCore.class);
 
   public static JavaStackCore getJavaStackCore() {
-    return SingeltonJavaStackCoreHelper._javaStackCore;
+    return new JavaStackCore();
   }
 
-  public String getEndpoint() {
-    return endpoint;
-  }
+  private String endpoint;
 
-  public void setEndpoint(String endpoint) {
-    this.endpoint = endpoint;
-  }
+  // private String image_id;
+  private boolean isAuthenticated = false;
 
-  public String getPassword() {
-    return this.password;
-  }
 
-  public void setPassword(String password) {
-    this.password = password;
-  }
+  private ObjectMapper mapper;
 
-  public String getUsername() {
-    return this.username;
-  }
+  private String password;
 
-  public void setUsername(String username) {
-    this.username = username;
-  }
+  private String projectId;
 
-  public String getTokenId() {
-    return this.token_id;
+  private String projectName;
+
+
+
+  private String token_id;
+
+  private String username;
+
+  private JavaStackCore() {}
+
+  /**
+   * Authenticate Client (v2 of the Identity API for backward compatability)
+   *
+   * @param
+   * @throws IOException
+   */
+  public void authenticateClientV2() throws IOException {
+
+    HttpClient httpClient = HttpClientBuilder.create().build();
+    HttpPost post;
+    HttpResponse response = null;
+
+    if (!isAuthenticated) {
+      StringBuilder buildUrl = new StringBuilder();
+      buildUrl.append("http://");
+      buildUrl.append(endpoint);
+      buildUrl.append(":");
+      buildUrl.append(Constants.AUTH_PORT.toString());
+      buildUrl.append(Constants.AUTH_URI_V2.toString());
+
+      post = new HttpPost(buildUrl.toString());
+      String body = String.format(
+          "{\"auth\": {\"tenantName\": \"%s\", \"passwordCredentials\": {\"username\": \"%s\", \"password\": \"%s\"}}}",
+          this.projectName, this.username, this.password);
+
+      Logger.debug("[JavaStack] Authenticating client...");
+      Logger.debug("[JavaStack] " + post.toString());
+      Logger.debug("[JavaStack] " + body);
+
+      post.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
+      response = httpClient.execute(post);
+
+      Logger.debug("[JavaStack] Authentication response:");
+      Logger.debug(response.toString());
+
+      mapper = new ObjectMapper();
+
+      String httpResponseString = JavaStackUtils.convertHttpResponseToString(response);
+      Logger.debug("[JavaStack] Authentication response body:");
+      Logger.debug(httpResponseString);
+      AuthenticationData auth = mapper.readValue(httpResponseString, AuthenticationData.class);
+
+      this.token_id = auth.getAccess().getToken().getId();
+      this.projectId = auth.getAccess().getToken().getTenant().getId();
+      this.isAuthenticated = true;
+
+    } else {
+      System.out.println("You are already authenticated");
+    }
   }
 
   /**
@@ -223,75 +248,47 @@ public class JavaStackCore {
    *
    * @throws IOException
    */
-  public synchronized void authenticateClientV3() throws IOException {
+  public synchronized void authenticateClientV3(String customIdentityPort) throws IOException {
     HttpClient httpClient = HttpClientBuilder.create().build();
     HttpPost post;
     HttpResponse response = null;
     HashMap<String, String> endpoint_details = new HashMap<>();
-
-    //<<<<<<< HEAD
-    // <<<<<<< HEAD
-    // StringBuilder buildUrl = new StringBuilder();
-    // buildUrl.append("http://");
-    // buildUrl.append(this.endpoint);
-    // buildUrl.append(":");
-    // buildUrl.append(Constants.AUTH_PORT.toString());
-    // buildUrl.append(Constants.AUTH_URI.toString());
-    //
-    // post = new HttpPost(buildUrl.toString());
-    //
-    // String body = String.format(
-    // // "{ \"auth\": {\"scope\": {\"project\": {\"name\": \"%s\"}}, \"identity\": { \"methods\":
-    // // [\"password\"], \"password\": { \"user\": { \"name\": \"%s\", \"domain\": { \"name\":
-    // // \"default\" }, \"password\": \"%s\" }}}}}",
-    // "{ \"auth\": {\"identity\": { \"methods\": [\"password\"], \"password\": { \"user\": {
-    // \"name\": \"%s\", \"domain\": { \"name\": \"default\" }, \"password\": \"%s\" }}}}}",
-    // // this.getTenantId(),
-    // this.username, this.password);
-    // Logger.debug("[JavaStack] Authenticating client...");
-    // post.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
-    // Logger.debug("[JavaStack] " + post.toString());
-    // Logger.debug("[JavaStack] " + body);
-    // response = httpClient.execute(post);
-    // Logger.debug("[JavaStack] Authentication response:");
-    // Logger.debug(response.toString());
-    // mapper = new ObjectMapper();
-    //
-    // AuthenticationData auth =
-    // mapper.readValue(JavaStackUtils.convertHttpResponseToString(response),
-    // AuthenticationData.class);
-    // if (response.containsHeader("X-Subject-Token")) {
-    // this.tokenId = response.getFirstHeader("X-Subject-Token").getValue();
-    // if (auth.getToken().getProject() != null) {
-    // this.projectId = auth.getToken().getProject().getId();
-    // }
-    // =======
-    // =======
-
+    String identityPort =
+        (customIdentityPort == null) ? Constants.AUTH_PORT.toString() : customIdentityPort;
     if (!isAuthenticated) {
       StringBuilder buildUrl = new StringBuilder();
       buildUrl.append("http://");
       buildUrl.append(endpoint);
       buildUrl.append(":");
-      buildUrl.append(Constants.AUTH_PORT.toString());
+      buildUrl.append(identityPort);
       buildUrl.append(Constants.AUTH_URI_V3.toString());
 
       post = new HttpPost(buildUrl.toString());
       String body = String.format(
-          "{\n" + "    \"auth\": {\n" + "        \"identity\": {\n" + "            \"methods\": [\n"
-              + "                \"password\"\n" + "            ],\n"
-              + "            \"password\": {\n" + "                \"user\": {\n"
-              + "                    \"name\": \"%s\",\n" + "                    \"domain\": {\n"
-              + "                        \"name\": \"%s\"\n" + "                    },\n"
-              + "                    \"password\": \"%s\"\n" + "                }\n"
-              + "            }\n" + "        }\n" + "    }\n" + "}",
+        "{\n" + "    \"auth\": {\n" 
+              + "        \"identity\": {\n" 
+              + "            \"methods\": [\n"
+              + "                \"password\"\n" 
+              + "            ],\n"
+              + "            \"password\": {\n" 
+              + "                \"user\": {\n"
+              + "                    \"name\": \"%s\",\n" 
+              + "                    \"domain\": {\n"
+              + "                        \"name\": \"%s\"\n" 
+              + "                    },\n"
+              + "                    \"password\": \"%s\"\n" 
+              + "                }\n"
+              + "            }\n" 
+              + "        }\n" 
+              + "    }\n" 
+              + "}",
           this.username, "default", this.password);
 
       post.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
 
       Logger.debug("[JavaStack] Authenticating client...");
       Logger.debug("[JavaStack] " + post.toString());
-//      Logger.debug("[JavaStack] " + body);
+      // Logger.debug("[JavaStack] " + body);
 
       response = httpClient.execute(post);
 
@@ -303,8 +300,10 @@ public class JavaStackCore {
       }
 
       mapper = new ObjectMapper();
-      AuthenticationDataV3 auth = mapper.readValue(
-          JavaStackUtils.convertHttpResponseToString(response), AuthenticationDataV3.class);
+      String httpResponseString = JavaStackUtils.convertHttpResponseToString(response);
+      Logger.debug("[JavaStack] Authentication response body:");
+      Logger.debug(httpResponseString);
+      AuthenticationDataV3 auth = mapper.readValue(httpResponseString, AuthenticationDataV3.class);
 
       ArrayList<CatalogItem> catalogItems = auth.getToken().getCatalog();
       for (CatalogItem catalogItem : catalogItems) {
@@ -353,14 +352,18 @@ public class JavaStackCore {
                 break;
 
               default:
-                Logger.warn("[JavaStack]Unhandled endpoint type: "+type+". skipping");
+                Logger.warn("[JavaStack]Unhandled endpoint type: " + type + ". skipping");
             }
           }
         }
       }
 
+      if (auth.getToken().getProject() == null) {
+        throw new IOException(
+            "Authentication response doesn't contain Project ID. SONATA VIM-Adaptor can't work with this Keystone configuration.");
+      }
       this.projectId = auth.getToken().getProject().getId();
-      Logger.debug("[JavaStack] ProjectId set to "+projectId);
+      Logger.debug("[JavaStack] ProjectId set to " + projectId);
       this.isAuthenticated = true;
 
     } else {
@@ -369,52 +372,41 @@ public class JavaStackCore {
   }
 
   /**
-   * Authenticate Client (v2 of the Identity API for backward compatability)
+   * GLANCE Method to create an Image
    *
-   * @param
+   * @param template
+   * @param containerFormat
+   * @param diskFormat
+   * @param name
+   * @return
    * @throws IOException
    */
-  public void authenticateClientV2() throws IOException {
-
+  public synchronized HttpResponse createImage(String template, String containerFormat,
+      String diskFormat, String name) throws IOException {
+    HttpPost createImage;
     HttpClient httpClient = HttpClientBuilder.create().build();
-    HttpPost post;
-    HttpResponse response = null;
 
-    if (!isAuthenticated) {
+    if (this.isAuthenticated) {
       StringBuilder buildUrl = new StringBuilder();
       buildUrl.append("http://");
-      buildUrl.append(endpoint);
+      buildUrl.append(this.endpoint);
       buildUrl.append(":");
-      buildUrl.append(Constants.AUTH_PORT.toString());
-      buildUrl.append(Constants.AUTH_URI_V2.toString());
+      buildUrl.append(Image.getPORT());
+      buildUrl.append(String.format("/%s/images", Image.getVERSION()));
 
-      post = new HttpPost(buildUrl.toString());
-      String body = String.format(
-          "{\"auth\": {\"tenantName\": \"%s\", \"passwordCredentials\": {\"username\": \"%s\", \"password\": \"%s\"}}}",
-          this.projectName, this.username, this.password);
+      createImage = new HttpPost(buildUrl.toString());
+      String requestBody =
+          String.format("{ \"container_format\": \"bare\"," + "\"disk_format\": \"raw\","
+              + " \"name\": \"%s\"" + ",\"visibility\":\"public\"" + "}", name);
 
-      Logger.debug("[JavaStack] Authenticating client...");
-      Logger.debug("[JavaStack] " + post.toString());
-      Logger.debug("[JavaStack] " + body);
-
-      post.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
-      response = httpClient.execute(post);
-
-      Logger.debug("[JavaStack] Authentication response:");
-      Logger.debug(response.toString());
-
-      mapper = new ObjectMapper();
-
-      AuthenticationData auth = mapper.readValue(
-          JavaStackUtils.convertHttpResponseToString(response), AuthenticationData.class);
-
-      this.token_id = auth.getAccess().getToken().getId();
-      this.projectId = auth.getAccess().getToken().getTenant().getId();
-      this.isAuthenticated = true;
+      createImage.setEntity(new StringEntity(requestBody, ContentType.APPLICATION_JSON));
+      createImage.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
 
     } else {
-      System.out.println("You are already authenticated");
+      throw new IOException(
+          "You must Authenticate before issuing this request, please re-authenticate. ");
     }
+    return httpClient.execute(createImage);
   }
 
   /**
@@ -461,79 +453,9 @@ public class JavaStackCore {
       String responsePhrase = response.getStatusLine().getReasonPhrase();
 
       Logger.debug("Response: " + response.toString());
-//      Logger.debug("Response body:");
-//
-//      if (statusCode != 201) {
-//        BufferedReader in =
-//            new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-//        String line = null;
-//
-//        while ((line = in.readLine()) != null)
-//          Logger.debug(line);
-//      }
-
-
-      return (statusCode == 201)
-          ? response
-          : factory.newHttpResponse(new BasicStatusLine(HttpVersion.HTTP_1_1, statusCode,
-              responsePhrase + ". Create Failed with Status: " + statusCode), null);
-    } else {
-      throw new IOException(
-          "You must Authenticate before issuing this request, please re-authenticate. ");
-    }
-  }
-
-  /**
-   * HEAT method to update a stack
-   *
-   * @param stackName
-   * @param stackUuid
-   * @param template
-   * @return
-   * @throws IOException
-   */
-  public synchronized HttpResponse updateStack(String stackName, String stackUuid, String template)
-      throws IOException {
-
-    HttpClient httpClient = HttpClientBuilder.create().build();
-    HttpResponseFactory factory = new DefaultHttpResponseFactory();
-    HttpPatch updateStack = null;
-    HttpResponse response = null;
-
-    String jsonTemplate = JavaStackUtils.convertYamlToJson(template);
-    JSONObject modifiedObject = new JSONObject();
-    modifiedObject.put("stack_name", stackName);
-    modifiedObject.put("template", new JSONObject(jsonTemplate));
-
-    if (this.isAuthenticated) {
-      Logger.debug("");
-      StringBuilder buildUrl = new StringBuilder();
-      buildUrl.append("http://");
-      buildUrl.append(this.endpoint);
-      buildUrl.append(":");
-      buildUrl.append(Orchestration.getPORT());
-      buildUrl.append(String.format("/%s/%s/stacks/%s/%s", Orchestration.getVERSION(), projectId,
-          stackName, stackUuid));
-
-      // Logger.debug(buildUrl.toString());
-      updateStack = new HttpPatch(buildUrl.toString());
-      updateStack
-          .setEntity(new StringEntity(modifiedObject.toString(), ContentType.APPLICATION_JSON));
-      // Logger.debug(this.token_id);
-      updateStack.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
-
-      Logger.debug("Request: " + updateStack.toString());
-      Logger.debug("Request body: " + modifiedObject.toString());
-
-      response = httpClient.execute(updateStack);
-      int statusCode = response.getStatusLine().getStatusCode();
-      String responsePhrase = response.getStatusLine().getReasonPhrase();
-
-      Logger.debug("Response: " + response.toString());
       // Logger.debug("Response body:");
       //
-      //
-      // if (statusCode != 202) {
+      // if (statusCode != 201) {
       // BufferedReader in =
       // new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
       // String line = null;
@@ -542,7 +464,8 @@ public class JavaStackCore {
       // Logger.debug(line);
       // }
 
-      return (statusCode == 202)
+
+      return (statusCode == 201)
           ? response
           : factory.newHttpResponse(new BasicStatusLine(HttpVersion.HTTP_1_1, statusCode,
               responsePhrase + ". Create Failed with Status: " + statusCode), null);
@@ -620,49 +543,20 @@ public class JavaStackCore {
 
   }
 
-  /**
-   * HEAT Method to list stacks
-   *
-   * @param endpoint
-   * @return
-   * @throws IOException
-   */
-  public synchronized HttpResponse listStacks(String endpoint) throws IOException {
+  public String getEndpoint() {
+    return endpoint;
+  }
 
+  public String getPassword() {
+    return this.password;
+  }
 
-    HttpClient httpClient = HttpClientBuilder.create().build();
-    HttpResponseFactory factory = new DefaultHttpResponseFactory();
-    HttpResponse response = null;
-    HttpGet listStacks = null;
+  public String getProjectId() {
+    return projectId;
+  }
 
-    if (this.isAuthenticated) {
-
-      StringBuilder buildUrl = new StringBuilder();
-      buildUrl.append("http://");
-      buildUrl.append(endpoint);
-      buildUrl.append(":");
-      buildUrl.append(Orchestration.getPORT());
-      buildUrl.append(String.format("/%s/%s/stacks", Orchestration.getVERSION(), this.projectId));
-
-      System.out.println(buildUrl);
-      System.out.println(this.token_id);
-
-      listStacks = new HttpGet(buildUrl.toString());
-      listStacks.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
-
-      response = httpClient.execute(listStacks);
-      int status_code = response.getStatusLine().getStatusCode();
-
-      return (status_code == 200)
-          ? response
-          : factory.newHttpResponse(new BasicStatusLine(HttpVersion.HTTP_1_1, status_code,
-              "List Failed with Status: " + status_code), null);
-
-    } else {
-      throw new IOException(
-          "You must Authenticate before issuing this request, please re-authenticate. ");
-    }
-
+  public String getProjectName() {
+    return projectName;
   }
 
   /**
@@ -715,48 +609,137 @@ public class JavaStackCore {
 
   }
 
+  public String getTokenId() {
+    return this.token_id;
+  }
+
+  public String getUsername() {
+    return this.username;
+  }
+
   /**
-   * HEAT Method to show resource details
+   * NOVA method to list compute flavors
    *
-   * @param stackName
-   * @param stackId
-   * @param resourceName
    * @return
    * @throws IOException
-   * @throws URISyntaxException
    */
-  public synchronized HttpResponse showResourceData(String stackName, String stackId,
-      String resourceName) throws IOException, URISyntaxException {
-    HttpResponseFactory factory = new DefaultHttpResponseFactory();
-    HttpClient httpclient = HttpClientBuilder.create().build();
-    HttpGet showResourceData = null;
+  public synchronized HttpResponse listComputeFlavors() throws IOException {
+    HttpGet getFlavors = null;
     HttpResponse response = null;
 
+    HttpClient httpClient = HttpClientBuilder.create().build();
+    HttpResponseFactory factory = new DefaultHttpResponseFactory();
+
     if (isAuthenticated) {
-      URIBuilder builder = new URIBuilder();
-      String path = String.format("/%s/%s/stacks/%s/%s/resources/%s", Orchestration.getVERSION(),
-          this.projectId, stackName, stackId, resourceName);
+      StringBuilder buildUrl = new StringBuilder();
+      buildUrl.append("http://");
+      buildUrl.append(endpoint);
+      buildUrl.append(":");
+      buildUrl.append(Compute.getPORT());
+      buildUrl.append(String.format("/%s/%s/flavors/detail", Compute.getVERSION(), this.projectId));
 
-      builder.setScheme("http").setHost(endpoint)
-          .setPort(Integer.parseInt(Orchestration.getPORT())).setPath(path);
+      // Logger.debug("[JavaStack] Authenticating client...");
+      getFlavors = new HttpGet(buildUrl.toString());
+      getFlavors.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
+      Logger.debug("[JavaStack] " + getFlavors.toString());
 
-      URI uri = builder.build();
-
-      showResourceData = new HttpGet(uri);
-      showResourceData.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
-
-      response = httpclient.execute(showResourceData);
+      response = httpClient.execute(getFlavors);
+      Logger.debug("[JavaStack] GET Flavor gresponse:");
+      Logger.debug(response.toString());
       int status_code = response.getStatusLine().getStatusCode();
-
       return (status_code == 200)
           ? response
           : factory.newHttpResponse(new BasicStatusLine(HttpVersion.HTTP_1_1, status_code,
-              "List Failed with Status: " + status_code), null);
-
-    } else {
-      throw new IOException(
-          "You must Authenticate before issuing this request, please re-authenticate. ");
+              "List Flavors  Failed with Status: " + status_code), null);
     }
+    return response;
+  }
+
+  /**
+   * NOVA method to list compute limits
+   *
+   * @return
+   * @throws IOException
+   */
+  public synchronized HttpResponse listComputeLimits() throws IOException {
+    HttpGet getLimits = null;
+    HttpResponse response = null;
+
+    HttpClient httpClient = HttpClientBuilder.create().build();
+    HttpResponseFactory factory = new DefaultHttpResponseFactory();
+
+    if (isAuthenticated) {
+      StringBuilder buildUrl = new StringBuilder();
+      buildUrl.append("http://");
+      buildUrl.append(endpoint);
+      buildUrl.append(":");
+      buildUrl.append(Compute.getPORT());
+      buildUrl.append(String.format("/%s/%s/limits", Compute.getVERSION(), this.projectId));
+
+      getLimits = new HttpGet(buildUrl.toString());
+      getLimits.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
+
+      Logger.debug("[JavaStack] Getting limit request:");
+      Logger.debug(getLimits.toString());
+
+      response = httpClient.execute(getLimits);
+
+      Logger.debug("[JavaStack] Getting limit request:");
+      Logger.debug(getLimits.toString());
+
+      int status_code = response.getStatusLine().getStatusCode();
+      return (status_code == 200)
+          ? response
+          : factory.newHttpResponse(new BasicStatusLine(HttpVersion.HTTP_1_1, status_code,
+              "List Limits Failed with Status: " + status_code), null);
+    }
+    return response;
+  }
+
+  /**
+   * GLANCE method to list images
+   *
+   * @return
+   * @throws IOException
+   */
+  public HttpResponse listImages() throws IOException {
+
+    Logger.debug("RESTful request to glance image list");
+    HttpGet listImages = null;
+    HttpResponse response = null;
+
+    HttpClient httpClient = HttpClientBuilder.create().build();
+    HttpResponseFactory factory = new DefaultHttpResponseFactory();
+
+    if (isAuthenticated) {
+
+      StringBuilder buildUrl = new StringBuilder();
+      buildUrl.append("http://");
+      buildUrl.append(endpoint);
+      buildUrl.append(":");
+      buildUrl.append(Image.getPORT());
+      buildUrl.append(String.format("/%s/images", Image.getVERSION()));
+      buildUrl.append("?limit=100");
+
+      listImages = new HttpGet(buildUrl.toString());
+      listImages.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
+
+      Logger.debug("URL request:");
+      Logger.debug(buildUrl.toString());
+
+      Logger.debug("HTTP request:");
+      Logger.debug(listImages.toString());
+
+      response = httpClient.execute(listImages);
+      Logger.debug("HTTP response:");
+      Logger.debug(response.toString());
+      int status_code = response.getStatusLine().getStatusCode();
+      return (status_code == 200)
+          ? response
+          : factory.newHttpResponse(new BasicStatusLine(HttpVersion.HTTP_1_1, status_code,
+              "Listing Images Failed with Status: " + status_code), null);
+    }
+    return response;
   }
 
   /**
@@ -805,41 +788,184 @@ public class JavaStackCore {
   }
 
   /**
-   * GLANCE Method to create an Image
+   * HEAT Method to list stacks
    *
-   * @param template
-   * @param containerFormat
-   * @param diskFormat
-   * @param name
+   * @param endpoint
    * @return
    * @throws IOException
    */
-  public synchronized HttpResponse createImage(String template, String containerFormat,
-      String diskFormat, String name) throws IOException {
-    HttpPost createImage;
+  public synchronized HttpResponse listStacks(String endpoint) throws IOException {
+
+
     HttpClient httpClient = HttpClientBuilder.create().build();
+    HttpResponseFactory factory = new DefaultHttpResponseFactory();
+    HttpResponse response = null;
+    HttpGet listStacks = null;
+
+    if (this.isAuthenticated) {
+
+      StringBuilder buildUrl = new StringBuilder();
+      buildUrl.append("http://");
+      buildUrl.append(endpoint);
+      buildUrl.append(":");
+      buildUrl.append(Orchestration.getPORT());
+      buildUrl.append(String.format("/%s/%s/stacks", Orchestration.getVERSION(), this.projectId));
+
+      System.out.println(buildUrl);
+      System.out.println(this.token_id);
+
+      listStacks = new HttpGet(buildUrl.toString());
+      listStacks.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
+
+      response = httpClient.execute(listStacks);
+      int status_code = response.getStatusLine().getStatusCode();
+
+      return (status_code == 200)
+          ? response
+          : factory.newHttpResponse(new BasicStatusLine(HttpVersion.HTTP_1_1, status_code,
+              "List Failed with Status: " + status_code), null);
+
+    } else {
+      throw new IOException(
+          "You must Authenticate before issuing this request, please re-authenticate. ");
+    }
+
+  }
+
+  public void setAuthenticated(boolean isAuthenticated) {
+    this.isAuthenticated = isAuthenticated;
+  }
+
+  public void setEndpoint(String endpoint) {
+    this.endpoint = endpoint;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
+  }
+
+  public void setProjectId(String projectId) {
+    this.projectId = projectId;
+  }
+
+  public void setProjectName(String projectName) {
+    this.projectName = projectName;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
+  }
+
+  /**
+   * HEAT Method to show resource details
+   *
+   * @param stackName
+   * @param stackId
+   * @param resourceName
+   * @return
+   * @throws IOException
+   * @throws URISyntaxException
+   */
+  public synchronized HttpResponse showResourceData(String stackName, String stackId,
+      String resourceName) throws IOException, URISyntaxException {
+    HttpResponseFactory factory = new DefaultHttpResponseFactory();
+    HttpClient httpclient = HttpClientBuilder.create().build();
+    HttpGet showResourceData = null;
+    HttpResponse response = null;
+
+    if (isAuthenticated) {
+      URIBuilder builder = new URIBuilder();
+      String path = String.format("/%s/%s/stacks/%s/%s/resources/%s", Orchestration.getVERSION(),
+          this.projectId, stackName, stackId, resourceName);
+
+      builder.setScheme("http").setHost(endpoint).setPort(Integer.parseInt(Orchestration.getPORT()))
+          .setPath(path);
+
+      URI uri = builder.build();
+
+      showResourceData = new HttpGet(uri);
+      showResourceData.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
+
+      response = httpclient.execute(showResourceData);
+      int status_code = response.getStatusLine().getStatusCode();
+
+      return (status_code == 200)
+          ? response
+          : factory.newHttpResponse(new BasicStatusLine(HttpVersion.HTTP_1_1, status_code,
+              "List Failed with Status: " + status_code), null);
+
+    } else {
+      throw new IOException(
+          "You must Authenticate before issuing this request, please re-authenticate. ");
+    }
+  }
+
+  /**
+   * HEAT method to update a stack
+   *
+   * @param stackName
+   * @param stackUuid
+   * @param template
+   * @return
+   * @throws IOException
+   */
+  public synchronized HttpResponse updateStack(String stackName, String stackUuid, String template)
+      throws IOException {
+
+    HttpClient httpClient = HttpClientBuilder.create().build();
+    HttpResponseFactory factory = new DefaultHttpResponseFactory();
+    HttpPatch updateStack = null;
+    HttpResponse response = null;
+
+    String jsonTemplate = JavaStackUtils.convertYamlToJson(template);
+    JSONObject modifiedObject = new JSONObject();
+    modifiedObject.put("stack_name", stackName);
+    modifiedObject.put("template", new JSONObject(jsonTemplate));
 
     if (this.isAuthenticated) {
       StringBuilder buildUrl = new StringBuilder();
       buildUrl.append("http://");
       buildUrl.append(this.endpoint);
       buildUrl.append(":");
-      buildUrl.append(Image.getPORT());
-      buildUrl.append(String.format("/%s/images", Image.getVERSION()));
+      buildUrl.append(Orchestration.getPORT());
+      buildUrl.append(String.format("/%s/%s/stacks/%s/%s", Orchestration.getVERSION(), projectId,
+          stackName, stackUuid));
 
-      createImage = new HttpPost(buildUrl.toString());
-      String requestBody =
-          String.format("{ \"container_format\": \"bare\"," + "\"disk_format\": \"raw\","
-              + " \"name\": \"%s\"" + ",\"visibility\":\"public\"" + "}", name);
+      // Logger.debug(buildUrl.toString());
+      updateStack = new HttpPatch(buildUrl.toString());
+      updateStack
+          .setEntity(new StringEntity(modifiedObject.toString(), ContentType.APPLICATION_JSON));
+      // Logger.debug(this.token_id);
+      updateStack.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
 
-      createImage.setEntity(new StringEntity(requestBody, ContentType.APPLICATION_JSON));
-      createImage.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
+      Logger.debug("Request: " + updateStack.toString());
+      Logger.debug("Request body: " + modifiedObject.toString());
 
+      response = httpClient.execute(updateStack);
+      int statusCode = response.getStatusLine().getStatusCode();
+      String responsePhrase = response.getStatusLine().getReasonPhrase();
+
+      Logger.debug("Response: " + response.toString());
+      // Logger.debug("Response body:");
+      //
+      //
+      // if (statusCode != 202) {
+      // BufferedReader in =
+      // new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+      // String line = null;
+      //
+      // while ((line = in.readLine()) != null)
+      // Logger.debug(line);
+      // }
+
+      return (statusCode == 202)
+          ? response
+          : factory.newHttpResponse(new BasicStatusLine(HttpVersion.HTTP_1_1, statusCode,
+              responsePhrase + ". Create Failed with Status: " + statusCode), null);
     } else {
       throw new IOException(
           "You must Authenticate before issuing this request, please re-authenticate. ");
     }
-    return httpClient.execute(createImage);
   }
 
   /**
@@ -878,147 +1004,6 @@ public class JavaStackCore {
     }
 
     return response;
-  }
-
-  /**
-   * GLANCE method to list images
-   *
-   * @return
-   * @throws IOException
-   */
-  public HttpResponse listImages() throws IOException {
-
-    Logger.debug("RESTful request to glance image list");
-    HttpGet listImages = null;
-    HttpResponse response = null;
-
-    HttpClient httpClient = HttpClientBuilder.create().build();
-    HttpResponseFactory factory = new DefaultHttpResponseFactory();
-
-    if (isAuthenticated) {
-
-      StringBuilder buildUrl = new StringBuilder();
-      buildUrl.append("http://");
-      buildUrl.append(endpoint);
-      buildUrl.append(":");
-      buildUrl.append(Image.getPORT());
-      buildUrl.append(String.format("/%s/images", Image.getVERSION()));
-
-      listImages = new HttpGet(buildUrl.toString());
-      listImages.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
-
-      Logger.debug("HTTP request:");
-      Logger.debug(listImages.toString());
-
-      response = httpClient.execute(listImages);
-      Logger.debug("HTTP response:");
-      Logger.debug(response.toString());
-      int status_code = response.getStatusLine().getStatusCode();
-      return (status_code == 200)
-          ? response
-          : factory.newHttpResponse(new BasicStatusLine(HttpVersion.HTTP_1_1, status_code,
-              "Listing Images Failed with Status: " + status_code), null);
-    }
-    return response;
-  }
-
-  /**
-   * NOVA method to list compute limits
-   *
-   * @return
-   * @throws IOException
-   */
-  public synchronized HttpResponse listComputeLimits() throws IOException {
-    HttpGet getLimits = null;
-    HttpResponse response = null;
-
-    HttpClient httpClient = HttpClientBuilder.create().build();
-    HttpResponseFactory factory = new DefaultHttpResponseFactory();
-
-    if (isAuthenticated) {
-      StringBuilder buildUrl = new StringBuilder();
-      buildUrl.append("http://");
-      buildUrl.append(endpoint);
-      buildUrl.append(":");
-      buildUrl.append(Compute.getPORT());
-      buildUrl.append(String.format("/%s/%s/limits", Compute.getVERSION(), this.projectId));
-
-      getLimits = new HttpGet(buildUrl.toString());
-      getLimits.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
-
-      Logger.debug("[JavaStack] Getting limit request:");
-      Logger.debug(getLimits.toString());
-
-      response = httpClient.execute(getLimits);
-
-      Logger.debug("[JavaStack] Getting limit request:");
-      Logger.debug(getLimits.toString());
-
-      int status_code = response.getStatusLine().getStatusCode();
-      return (status_code == 200)
-          ? response
-          : factory.newHttpResponse(new BasicStatusLine(HttpVersion.HTTP_1_1, status_code,
-              "List Limits Failed with Status: " + status_code), null);
-    }
-    return response;
-  }
-
-  /**
-   * NOVA method to list compute flavors
-   *
-   * @return
-   * @throws IOException
-   */
-  public synchronized HttpResponse listComputeFlavors() throws IOException {
-    HttpGet getFlavors = null;
-    HttpResponse response = null;
-
-    HttpClient httpClient = HttpClientBuilder.create().build();
-    HttpResponseFactory factory = new DefaultHttpResponseFactory();
-
-    if (isAuthenticated) {
-      StringBuilder buildUrl = new StringBuilder();
-      buildUrl.append("http://");
-      buildUrl.append(endpoint);
-      buildUrl.append(":");
-      buildUrl.append(Compute.getPORT());
-      buildUrl.append(String.format("/%s/%s/flavors/detail", Compute.getVERSION(), this.projectId));
-
-      // Logger.debug("[JavaStack] Authenticating client...");
-      getFlavors = new HttpGet(buildUrl.toString());
-      getFlavors.addHeader(Constants.AUTHTOKEN_HEADER.toString(), this.token_id);
-      Logger.debug("[JavaStack] " + getFlavors.toString());
-
-      response = httpClient.execute(getFlavors);
-      Logger.debug("[JavaStack] GET Flavor gresponse:");
-      Logger.debug(response.toString());
-      int status_code = response.getStatusLine().getStatusCode();
-      return (status_code == 200)
-          ? response
-          : factory.newHttpResponse(new BasicStatusLine(HttpVersion.HTTP_1_1, status_code,
-              "List Flavors  Failed with Status: " + status_code), null);
-    }
-    return response;
-  }
-
-  public String getProjectId() {
-    return projectId;
-  }
-
-  public String getProjectName() {
-    return projectName;
-  }
-
-  public void setProjectName(String projectName) {
-    this.projectName = projectName;
-  }
-
-  public void setProjectId(String projectId) {
-    this.projectId = projectId;
-  }
-
-  public void setAuthenticated(boolean isAuthenticated) {
-    this.isAuthenticated = isAuthenticated;
   }
 
 }
