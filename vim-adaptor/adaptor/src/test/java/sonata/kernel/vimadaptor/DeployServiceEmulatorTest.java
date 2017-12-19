@@ -452,10 +452,11 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
 
     topic = "infrastructure.service.remove";
     body = "{instance_uuid: \"" + data.getNsd().getInstanceUuid() + "\"}";
+    System.out.println("ServiceRemove Body:");
     System.out.println(body);
+    // the sonata emulator does not yet support yaml for this operation
     ServicePlatformMessage stackRemoveMessage = new ServicePlatformMessage(body,
             "application/json", topic, UUID.randomUUID().toString(), topic);
-    System.out.println(stackRemoveMessage);
     consumer.injectMessage(stackRemoveMessage);
     Thread.sleep(2000);
     while (output ==null)
