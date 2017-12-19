@@ -318,9 +318,7 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
 
     String body = mapper.writeValueAsString(payload);
     System.out.println("[EmulatorTest] Request body:");
-    System.out.println("******************************************************************************************");
     System.out.println(body);
-    System.out.println("******************************************************************************************");
 
     topic = "infrastructure.service.prepare";
     ServicePlatformMessage servicePrepareMessage = new ServicePlatformMessage(body,
@@ -462,7 +460,6 @@ public class DeployServiceEmulatorTest implements MessageReceiver {
     Thread.sleep(2000);
     while (output ==null)
       synchronized(mon) {
-        System.out.println("Step loop");
         mon.wait(1000);
       }
     Assert.assertNotNull(output);
